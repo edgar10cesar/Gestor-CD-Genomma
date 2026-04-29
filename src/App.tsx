@@ -682,11 +682,11 @@ export default function App() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
         <div className="flex flex-col items-center gap-6">
-          <div className="w-20 h-20 bg-emerald-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-emerald-600/30 animate-bounce">
-            <Package className="w-10 h-10 text-white" />
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl shadow-slate-200/50 animate-bounce p-4 border border-slate-100">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Genomma_Lab_Logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col items-center gap-1">
-            <div className="text-sm font-black text-slate-900 uppercase tracking-widest">Genomma Logística</div>
+            <div className="text-sm font-black text-slate-900 uppercase tracking-widest">Gestor CD-GEN</div>
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Autenticando...</div>
           </div>
         </div>
@@ -700,11 +700,11 @@ export default function App() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#F9FAFB] p-4 font-sans">
         <div className="w-full max-w-md p-10 bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/50">
           <div className="mb-10 flex flex-col items-center text-center">
-            <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-xl shadow-emerald-600/20 mb-6 transform -rotate-3">
-              <Package className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-slate-100 mb-6 transform -rotate-3 p-3 border border-slate-100">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Genomma_Lab_Logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-              Genomma <span className="text-emerald-600">Logística</span>
+              Gestor <span className="text-emerald-600">CD-GEN</span>
             </h1>
             <div className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">
               - CD Extrema / MG -
@@ -905,8 +905,9 @@ export default function App() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Genomma_Lab_Logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" onError={(e) => e.currentTarget.style.display='none'} />
           <div>
-            <h1 className="font-bold text-lg tracking-tight text-slate-900">Genomma - <span className="font-medium text-slate-600">Controle de insumos</span> - <span className="text-slate-400 font-normal">CD Extrema/MG</span></h1>
+            <h1 className="font-bold text-lg tracking-tight text-slate-900">Gestor <span className="font-medium text-slate-600">CD-GEN</span></h1>
           </div>
         </div>
         
@@ -1534,7 +1535,7 @@ export default function App() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-3">
               <div>
-                <p className="font-bold text-slate-900 text-sm">Genomma - <span className="text-slate-600">Controle de insumos</span> - <span className="text-slate-400 font-normal">CD Extrema/MG</span></p>
+              <p className="font-bold text-slate-900 text-sm">Gestor <span className="text-slate-600">CD-GEN</span></p>
                 <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest sr-only">Controle de Suprimentos v2.0</p>
               </div>
             </div>
