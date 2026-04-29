@@ -22,7 +22,20 @@ Utilizaremos o Vercel para hospedar o sistema profissionalmente (Opção gratuit
      *   **No Print que você enviou:** Você deve apagar aquele código que digitou e colar o link do site.
 5. Clique em **Deploy**.
 
-## 3. Por que isso é Profissional?
+## 3. Configuração do Firebase (Vital para o Login Google)
+Como o seu sistema agora está em um novo endereço (`gestor-cd-genomma.vercel.app`), o Google bloqueia o login por segurança até você autorizar esse novo domínio.
+
+1. Acesse o [Console do Firebase](https://console.firebase.google.com/).
+2. Clique no seu projeto: **"Fluxo de caixa pessoal"** (é este o nome que aparece no seu print).
+3. No menu lateral, vá em **Authentication** (Autenticação).
+4. Clique na aba **Settings** (Configurações) no topo.
+5. No menu à esquerda, clique em **Authorized Domains** (Domínios Autorizados).
+6. Clique em **Add Domain** (Adicionar Domínio).
+7. Digite: `gestor-cd-genomma.vercel.app` e salve.
+
+---
+
+## 4. Por que isso é Profissional?
 - **Domínio Próprio:** Você pode conectar `estoque.suaempresa.com.br`.
 - **CI/CD:** Qualquer erro ou alteração que eu (o agente) fizer, passará por um processo de build automático.
 - **Sincronização Total:** Todos os funcionários usarão o mesmo link estável, evitando o problema de uns verem itens que outros não veem.
