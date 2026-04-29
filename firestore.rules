@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Material validation
+    function isValidMaterial(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+             data.unit is string && data.unit.size() > 0 && data.unit.size() <= 50 &&
+             data.currentStock is number &&
+             data.minStock is number &&
+             data.category is string;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'cesar.802012@gmail.com';
+    }
+
+    match /materials/{materialId} {
+      allow read: if isSignedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isSignedIn() && isValidMaterial(incoming()); 
+    }
+
+    // Inventory Log validation
+    function isValidLog(data) {
+      return data.materialId is string &&
+             data.type in ['inventory_check', 'purchase', 'consumption'] &&
+             data.quantity is number &&
+             data.timestamp == request.time;
+    }
+
+    match /inventory_logs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidLog(incoming());
+      allow update, delete: if false; 
+    }
+
+    match /settings/{settingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin(); 
+    }
+
+    match /users/{userId} {
+      allow get: if true; 
+      allow list: if isSignedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isSignedIn() && (request.auth.uid == userId || request.auth.token.email == existing().email));
+      allow delete: if isAdmin();
+    }
+  }
+}

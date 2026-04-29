@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "Material": {
+      "title": "Material",
+      "description": "Inventory material item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "currentStock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "unit": { "type": "string" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "category", "currentStock", "minStock", "unit"]
+    },
+    "User": {
+      "title": "User",
+      "description": "System user/collaborator",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "isAdmin": { "type": "boolean" },
+        "isInventoryResponsible": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["invited", "active"] },
+        "invitedAt": { "type": "string", "format": "date-time" },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "isAdmin", "isInventoryResponsible", "status"]
+    }
+  },
+  "firestore": {
+    "/materials/{materialId}": {
+      "schema": "Material",
+      "description": "Storage for all materials"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and access roles"
+    },
+    "/logs/{logId}": {
+      "schema": "object",
+      "description": "Audit logs for inventory changes"
+    },
+    "/settings/config": {
+      "schema": "object",
+      "description": "Global app settings"
+    }
+  }
+}
