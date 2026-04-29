@@ -11,8 +11,9 @@ import {
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
-const dbId = firebaseConfig.firestoreDatabaseId || '(default)';
+const firebaseConfigToUse = firebaseConfig || {};
+const app = initializeApp(firebaseConfigToUse);
+const dbId = (firebaseConfigToUse as any).firestoreDatabaseId || '(default)';
 export const db = getFirestore(app, dbId);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();

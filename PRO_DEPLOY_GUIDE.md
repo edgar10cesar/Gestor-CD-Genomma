@@ -17,7 +17,9 @@ Utilizaremos o Vercel para hospedar o sistema profissionalmente (Opção gratuit
    - `GEMINI_API_KEY`: Sua chave do Google Gemini.
    - `GMAIL_USER`: Seu e-mail do Gmail para notificações.
    - `GMAIL_APP_PASSWORD`: Sua Senha de App do Google.
-   - `VITE_APP_URL`: A URL final que o Vercel te der (ex: `estoque-extrema.vercel.app`).
+   - `VITE_APP_URL`: A URL do seu site no Vercel. 
+     *   **Onde achar?** Após o primeiro deploy, o Vercel mostrará um link abaixo de "DOMAINS" (ex: `https://meu-projeto.vercel.app`). Copie o link completo com `https://`.
+     *   **No Print que você enviou:** Você deve apagar aquele código que digitou e colar o link do site.
 5. Clique em **Deploy**.
 
 ## 3. Por que isso é Profissional?

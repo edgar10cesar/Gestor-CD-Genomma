@@ -52,7 +52,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import NFDashboard from './components/NFDashboard';
 
 const ADMIN_EMAILS = ['cesar.802012@gmail.com'];
-const SHARED_APP_URL = 'https://ais-pre-2gfjzry7x7coyi5ajllvvx-150633624590.us-east5.run.app';
+const SHARED_APP_URL = window.location.origin;
 
 export default function App() {
   console.log("App component rendering...");
