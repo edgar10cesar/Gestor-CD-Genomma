@@ -49,7 +49,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import NFDashboard from './components/NFDashboard';
 
 const ADMIN_EMAILS = ['cesar.802012@gmail.com'];
 const SHARED_APP_URL = window.location.origin;
@@ -68,7 +67,6 @@ export default function App() {
   }>({});
   const [lastAlerted, setLastAlerted] = useState<Record<string, number>>({});
   const [search, setSearch] = useState('');
-  const [currentApp, setCurrentApp] = useState<'inventory' | 'nf'>('inventory');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [allUsers, setAllUsers] = useState<any[]>([]);
   // Check if current user is admin
@@ -913,21 +911,6 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/50">
-            <button 
-              onClick={() => setCurrentApp('inventory')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${currentApp === 'inventory' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Estoque
-            </button>
-            <button 
-              onClick={() => setCurrentApp('nf')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${currentApp === 'nf' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Notas Fiscais
-            </button>
-          </div>
-
           <div className="hidden md:flex items-center gap-3 pr-4 border-r border-slate-200">
              <div className="text-right">
               <p className="text-xs font-semibold text-slate-900">{user.displayName}</p>
@@ -1099,7 +1082,6 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto p-0">
-        {currentApp === 'inventory' ? (
           <div className="p-6 md:p-10 space-y-10 animate-in fade-in duration-500">
             {/* Top Summary Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -1544,11 +1526,6 @@ export default function App() {
           </Tabs>
         </div>
       </div>
-        ) : (
-          <div className="animate-in fade-in duration-500">
-            <NFDashboard />
-          </div>
-        )}
       </main>
 
       {/* Corporate Footer */}
