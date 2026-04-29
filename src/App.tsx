@@ -948,32 +948,6 @@ export default function App() {
                     </p>
                   </div>
 
-                  <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">Link de Acesso Oficial (Envie para a equipe)</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        readOnly
-                        value={window.location.origin}
-                        className="rounded-xl bg-slate-50 border-slate-200 text-slate-500 text-[10px] h-10 font-mono"
-                      />
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        onClick={() => {
-                          navigator.clipboard.writeText(window.location.origin);
-                          toast.success("Link oficial copiado!");
-                        }}
-                        className="rounded-xl shrink-0 border-slate-200 hover:bg-emerald-50 hover:text-emerald-600 transition-colors h-10 w-10"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <p className="text-[9px] text-slate-400 font-medium px-1 flex items-center gap-1.5 leading-tight">
-                      <AlertCircle className="w-3 h-3 text-amber-500 shrink-0" />
-                      Para evitar falta de sincronização, certifique-se que todos usam este link acima.
-                    </p>
-                  </div>
-
                   <div className="grid gap-3 pt-4 border-t border-slate-100">
                     <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">Equipe e Acessos</Label>
                     <div className="space-y-4">
