@@ -856,7 +856,16 @@ export default function App() {
             </div>
 
             <Button 
-              onClick={signIn}
+              onClick={async () => {
+                try {
+                  await signIn();
+                } catch (error: any) {
+                  console.error("Login Error:", error);
+                  toast.error("Erro ao fazer login com Google", {
+                    description: error.message || "Verifique os domínios autorizados no Firebase."
+                  });
+                }
+              }}
               variant="outline"
               className="w-full border-slate-200 rounded-xl h-12 text-slate-600 font-medium hover:bg-slate-50"
             >

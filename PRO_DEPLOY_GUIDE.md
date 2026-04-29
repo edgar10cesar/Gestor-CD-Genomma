@@ -33,9 +33,16 @@ Como o seu sistema agora está em um novo endereço (`gestor-cd-genomma.vercel.a
 6. Clique em **Add Domain** (Adicionar Domínio).
 7. Digite: `gestor-cd-genomma.vercel.app` e salve.
 
+8. **Verifique se o Google está ATIVADO:**
+   - No menu lateral do Firebase, em **Authentication**, vá na aba **Sign-in method**.
+   - Verifique se o **Google** está com o status "Enabled" (Ativado). Se não estiver, clique nele, ative e salve (pode pedir um e-mail de suporte, escolha o seu).
+
 ---
 
-## 4. Por que isso é Profissional?
+## 4. O Login não abre? (Soluções Comuns)
+Se você clica no botão "Google Account" e nada acontece:
+1. **Bloqueador de Pop-ups:** O navegador pode estar bloqueando a janelinha do Google. Olhe na barra de endereços se tem um ícone de "janela bloqueada".
+2. **Erro no Console:** No seu computador, aperte `F12` (ou clique com o botão direito -> Inspecionar) e vá na aba **Console**. Se houver algum erro em vermelho lá, me envie um print!
 - **Domínio Próprio:** Você pode conectar `estoque.suaempresa.com.br`.
 - **CI/CD:** Qualquer erro ou alteração que eu (o agente) fizer, passará por um processo de build automático.
 - **Sincronização Total:** Todos os funcionários usarão o mesmo link estável, evitando o problema de uns verem itens que outros não veem.
