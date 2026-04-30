@@ -80,6 +80,8 @@ export default function App() {
   const isAdmin = userEmail && (ADMIN_EMAILS.includes(userEmail) || userRecord?.role === 'admin');
   const isSuperAdmin = userEmail && ADMIN_EMAILS.includes(userEmail);
 
+  console.log("Auth State:", { userEmail, isAdmin, isSuperAdmin });
+
   // New Material Form State
   const [isAdding, setIsAdding] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -137,7 +139,7 @@ export default function App() {
     const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
       // Se for login via Google, validar se é um admin autorizado
       if (u && u.providerData.some(p => p.providerId === 'google.com')) {
-        const email = u.email?.toLowerCase();
+        const email = u.email?.toLowerCase()?.trim();
         if (email && !ADMIN_EMAILS.includes(email)) {
           console.warn("Blocked Google login attempt from:", email);
           await auth.signOut();
@@ -401,14 +403,16 @@ export default function App() {
       if (response.ok) {
         toast.success(`E-mail de convite enviado para ${to}`);
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: "Erro ao processar resposta do servidor" }));
         const msg = errorData.error || "Erro desconhecido no servidor";
         console.error("Failed to send invitation email:", errorData);
         toast.error(`Falha no envio: ${msg}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending email:", error);
-      toast.error("Erro de conexão ao enviar e-mail. Use a opção de copiar link.");
+      toast.error("Erro de comunicação com o servidor", {
+        description: "Pode ser um bloqueio de rede ou o servidor reiniciando. Tente novamente em alguns segundos ou use a opção de copiar link."
+      });
     }
   };
 
