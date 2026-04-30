@@ -80,9 +80,9 @@ service cloud.firestore {
 
     match /maintenance_tickets/{ticketId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidTicket(incoming());
-      allow update: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.reportedBy);
-      allow delete: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.reportedBy);
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isAdmin() || resource.data.reportedBy == request.auth.uid);
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.reportedBy == request.auth.uid);
     }
   }
 }

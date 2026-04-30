@@ -243,13 +243,27 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
   };
 
   const handleEditTicket = async () => {
+    console.log("[Maintenance] Tentando salvar edição:", {
+      id: editingTicket?.id,
+      form: editForm
+    });
+
     if (!editingTicket || !editForm.location || !editForm.description || !editForm.priority) {
+      console.warn("[Maintenance] Campos obrigatórios faltando:", {
+        id: !!editingTicket,
+        location: !!editForm.location,
+        description: !!editForm.description,
+        priority: !!editForm.priority
+      });
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
     try {
-      await updateDoc(doc(db, 'maintenance_tickets', editingTicket.id), {
+      const docRef = doc(db, 'maintenance_tickets', editingTicket.id);
+      console.log("[Maintenance] DocRef:", docRef.path);
+      
+      await updateDoc(docRef, {
         location: editForm.location,
         description: editForm.description,
         resolution: editForm.resolution || '',
@@ -262,8 +276,16 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
       setIsEditing(false);
       setEditingTicket(null);
       toast.success("Solicitação atualizada!");
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `maintenance_tickets/${editingTicket.id}`);
+    } catch (error: any) {
+      console.error("Error editing ticket:", error);
+      toast.error("Falha ao salvar alterações", {
+        description: error.message || "Verifique sua conexão ou permissões."
+      });
+      try {
+        handleFirestoreError(error, OperationType.WRITE, `maintenance_tickets/${editingTicket.id}`);
+      } catch (innerError) {
+        // Error already logged and toast shown
+      }
     }
   };
 
@@ -317,8 +339,16 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         setResolvingTicket(null);
         setResolutionInput('');
       }
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `maintenance_tickets/${id}`);
+    } catch (error: any) {
+      console.error("Error updating status:", error);
+      toast.error("Falha ao alterar status", {
+        description: error.message || "Ocorreu um erro no servidor."
+      });
+      try {
+        handleFirestoreError(error, OperationType.WRITE, `maintenance_tickets/${id}`);
+      } catch (innerError) {
+        // Logged
+      }
     }
   };
 
