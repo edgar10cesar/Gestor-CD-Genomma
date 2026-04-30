@@ -711,7 +711,7 @@ export default function App() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
         <div className="flex flex-col items-center gap-6">
-          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center shadow-2xl shadow-slate-200/50 animate-bounce p-4 border border-slate-100">
+          <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center shadow-2xl shadow-slate-200/50 animate-bounce p-5 border border-slate-100">
             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Genomma_Lab_Logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col items-center gap-1">
@@ -729,7 +729,7 @@ export default function App() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#F9FAFB] p-4 font-sans">
         <div className="w-full max-w-md p-10 bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/50">
           <div className="mb-10 flex flex-col items-center text-center">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-slate-100 mb-6 transform -rotate-3 p-3 border border-slate-100">
+            <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-slate-100 mb-6 p-4 border border-slate-100">
               <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Genomma_Lab_Logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
@@ -743,11 +743,7 @@ export default function App() {
                 <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
                 Ativação de Novo Colaborador
               </div>
-            ) : (
-              <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">
-                Gestão Profissional de Insumos
-              </p>
-            )}
+            ) : null}
           </div>
 
           {user && currentInvite && user.email?.toLowerCase() !== currentInvite.email?.toLowerCase() && (
