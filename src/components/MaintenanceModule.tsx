@@ -367,7 +367,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
               <span className="md:hidden">Novo</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md">
+          <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader className="mb-4 sm:mb-6">
               <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">Nova Manutenção</DialogTitle>
               <p className="text-sm text-slate-500 font-medium leading-relaxed">Descreva o problema encontrado no CD.</p>
@@ -880,7 +880,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
 
       {/* Edit Dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md">
+      <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-4 sm:mb-6">
             <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">Editar Manutenção</DialogTitle>
             <p className="text-sm text-slate-500 font-medium leading-relaxed">Atualize os detalhes da solicitação.</p>
@@ -1146,7 +1146,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
 
       {/* Resolution Dialog */}
       <Dialog open={isResolving} onOpenChange={setIsResolving}>
-        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md">
+      <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader className="mb-4 sm:mb-6">
             <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               <CheckCircle2 className="w-6 h-6 text-emerald-500" />
