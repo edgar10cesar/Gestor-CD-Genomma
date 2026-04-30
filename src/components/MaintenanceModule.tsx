@@ -63,6 +63,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -221,6 +222,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
       return;
     }
 
+    setIsSaving(true);
     try {
       await addDoc(collection(db, 'maintenance_tickets'), {
         location: newTicket.location,
@@ -237,8 +239,14 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
       setIsAdding(false);
       setNewTicket({ location: '', description: '', priority: '', isSafetyRisk: false, photos: [] });
       toast.success("Solicitação de manutenção enviada!");
-    } catch (error) {
+    } catch (error: any) {
+      console.error("[Maintenance] Erro ao adicionar:", error);
+      toast.error("Falha ao enviar solicitação", {
+        description: error.message || "Tente novamente mais tarde."
+      });
       handleFirestoreError(error, OperationType.CREATE, 'maintenance_tickets');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -259,11 +267,12 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
       return;
     }
 
+    setIsSaving(true);
     try {
       const docRef = doc(db, 'maintenance_tickets', editingTicket.id);
       console.log("[Maintenance] DocRef:", docRef.path);
       
-      await updateDoc(docRef, {
+      const updateData = {
         location: editForm.location,
         description: editForm.description,
         resolution: editForm.resolution || '',
@@ -271,21 +280,50 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         isSafetyRisk: editForm.isSafetyRisk,
         photoUrls: editForm.photos,
         updatedAt: serverTimestamp()
-      });
+      };
+
+      console.log("[Maintenance] Enviando updateData:", updateData);
+
+      // Timeout safety
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("O servidor demorou muito para responder (timeout).")), 15000)
+      );
+
+      await Promise.race([
+        updateDoc(docRef, updateData),
+        timeoutPromise
+      ]);
       
+      console.log("[Maintenance] Sucesso no updateDoc");
       setIsEditing(false);
       setEditingTicket(null);
-      toast.success("Solicitação atualizada!");
+      toast.success("Solicitação atualizada com sucesso!");
     } catch (error: any) {
-      console.error("Error editing ticket:", error);
+      console.error("[Maintenance] ERRO CRÍTICO AO EDITAR:", error);
+      
+      let errorMsg = "Erro desconhecido";
+      if (error.code === 'permission-denied') {
+        errorMsg = "Você não tem permissão para editar este chamado.";
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+
       toast.error("Falha ao salvar alterações", {
-        description: error.message || "Verifique sua conexão ou permissões."
+        description: errorMsg
       });
+
+      // Se for erro de tamanho de documento (fotos demais)
+      if (error.message?.includes('too large') || (error.code === 'invalid-argument' && error.message?.includes('1048576'))) {
+        toast.error("Documento muito grande! Remova algumas fotos e tente novamente.");
+      }
+
       try {
         handleFirestoreError(error, OperationType.WRITE, `maintenance_tickets/${editingTicket.id}`);
       } catch (innerError) {
-        // Error already logged and toast shown
+        // Logged
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -324,6 +362,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
   };
 
   const updateStatus = async (id: string, newStatus: 'in_progress' | 'resolved', resolution?: string) => {
+    setIsSaving(true);
     try {
       const updateData: any = {
         status: newStatus,
@@ -349,6 +388,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
       } catch (innerError) {
         // Logged
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -508,9 +549,15 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
               </DialogClose>
               <Button 
                 onClick={handleAddTicket}
+                disabled={isSaving}
                 className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-600/20 font-bold uppercase tracking-widest text-[10px] h-12 flex-1"
               >
-                Enviar Chamado
+                {isSaving ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Enviando...
+                  </div>
+                ) : "Enviar Chamado"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1032,9 +1079,15 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
             </DialogClose>
             <Button 
               onClick={handleEditTicket}
+              disabled={isSaving}
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 font-bold uppercase tracking-widest text-[10px] h-12 flex-1"
             >
-              Salvar Alterações
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </div>
+              ) : "Salvar Alterações"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1212,9 +1265,15 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
             </Button>
             <Button 
               onClick={() => resolvingTicket && updateStatus(resolvingTicket.id, 'resolved', resolutionInput)}
+              disabled={isSaving}
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 font-bold uppercase tracking-widest text-[10px] h-12 flex-1"
             >
-              Confirmar Resolução
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </div>
+              ) : "Confirmar Resolução"}
             </Button>
           </DialogFooter>
         </DialogContent>
