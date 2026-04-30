@@ -34,7 +34,10 @@ import {
   Trash2,
   AlertCircle,
   Copy,
-  Pencil
+  Pencil,
+  ChevronRight,
+  Wrench,
+  ArrowLeft
 } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 
@@ -49,9 +52,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MaintenanceModule from './components/MaintenanceModule';
 
 const ADMIN_EMAILS = ['cesar.802012@gmail.com'];
-const SHARED_APP_URL = window.location.origin;
+const SHARED_APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
 
 export default function App() {
   console.log("App component rendering...");
@@ -65,10 +69,11 @@ export default function App() {
     inventoryResponsibleEmails?: string[],
     lastAutoInventoryEmailSent?: string 
   }>({});
-  const [lastAlerted, setLastAlerted] = useState<Record<string, number>>({});
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [activeModule, setActiveModule] = useState<'home' | 'inventory' | 'maintenance'>('home');
+  const [categoryFilter, setCategoryFilter] = useState('todas');
   const [allUsers, setAllUsers] = useState<any[]>([]);
+  const lastAlertedRef = React.useRef<Record<string, number>>({});
   // Check if current user is admin
   const userRecord = allUsers.find(u => u.email === user?.email);
   const isAdmin = user?.email && (ADMIN_EMAILS.includes(user.email) || userRecord?.role === 'admin');
@@ -81,8 +86,9 @@ export default function App() {
 
   // Unified User Management State
   const [targetUserEmail, setTargetUserEmail] = useState('');
-  const [targetUserIsInventory, setTargetUserIsInventory] = useState(false);
+  const [targetUserIsInventory, setTargetUserIsInventory] = useState(true);
   const [targetUserIsPurchasing, setTargetUserIsPurchasing] = useState(false);
+  const [targetUserCanMaintenance, setTargetUserCanMaintenance] = useState(true);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProcessingUser, setIsProcessingUser] = useState(false);
@@ -104,8 +110,8 @@ export default function App() {
   });
 
   const filteredMaterials = materials.filter(m => {
-    const matchesSearch = m.name?.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || m.category === categoryFilter;
+    const matchesSearch = (m.name || '').toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === 'todas' || m.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
@@ -145,17 +151,6 @@ export default function App() {
       console.log("Materials updated from Firestore:", matList.length, "items");
       setMaterials(matList);
       setDataLoading(false);
-      
-      // Auto-alert check
-      matList.forEach(m => {
-        if (m.currentStock <= m.minStock && (!lastAlerted[m.id] || Date.now() - lastAlerted[m.id] > 3600000)) {
-          toast.error(`ESTOQUE BAIXO: ${m.name} está com apenas ${m.currentStock} ${m.unit}`, {
-            description: `O estoque mínimo é ${m.minStock}. Favor providenciar reposição.`,
-            duration: 8000,
-          });
-          setLastAlerted(prev => ({ ...prev, [m.id]: Date.now() }));
-        }
-      });
     }, (error) => {
       setDataLoading(false);
       handleFirestoreError(error, OperationType.LIST, 'materials');
@@ -191,7 +186,23 @@ export default function App() {
       unsubscribeSettings();
       unsubscribeUsers();
     };
-  }, [user, lastAlerted]);
+  }, [user]);
+
+  // Auto-alert check for low stock - Only when in inventory module
+  useEffect(() => {
+    if (activeModule !== 'inventory' || dataLoading) return;
+    
+    materials.forEach(m => {
+      const lastAlert = lastAlertedRef.current[m.id];
+      if (m.currentStock <= m.minStock && (!lastAlert || Date.now() - lastAlert > 3600000)) {
+        toast.error(`ESTOQUE BAIXO: ${m.name} está com apenas ${m.currentStock} ${m.unit}`, {
+          description: `O estoque mínimo é ${m.minStock}. Favor providenciar reposição.`,
+          duration: 8000,
+        });
+        lastAlertedRef.current[m.id] = Date.now();
+      }
+    });
+  }, [materials, activeModule, dataLoading]);
 
     // Higher priority invite check
   useEffect(() => {
@@ -291,6 +302,7 @@ export default function App() {
         await updateDoc(doc(db, 'users', existingUser.id), {
           isInventoryResponsible: targetUserIsInventory,
           isPurchasingManager: targetUserIsPurchasing,
+          canAccessMaintenance: targetUserCanMaintenance,
           updatedAt: serverTimestamp()
         });
         toast.success("Acessos do usuário atualizados!");
@@ -300,6 +312,7 @@ export default function App() {
           email: targetUserEmail,
           isInventoryResponsible: targetUserIsInventory,
           isPurchasingManager: targetUserIsPurchasing,
+          canAccessMaintenance: targetUserCanMaintenance,
           role: 'user',
           status: 'invited',
           invitedAt: serverTimestamp(),
@@ -307,23 +320,38 @@ export default function App() {
         });
 
         // Send Link
-        const inviteUrl = window.location.origin + "?invite=" + userRef.id;
+        const inviteUrl = SHARED_APP_URL + "?invite=" + userRef.id;
         const htmlBody = `
-          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 25px; border-radius: 15px;">
-            <h2 style="color: #059669; margin-bottom: 20px;">Convite de Acesso Genomma</h2>
-            <p>Olá,</p>
-            <p>Você foi convidado para acessar o <strong>Controle de insumos - CD Extrema/MG</strong>.</p>
-            <p>Suas permissões configuradas: 
-              ${targetUserIsInventory ? '• <strong>Responsável pelo Inventário</strong><br/>' : ''}
-              ${targetUserIsPurchasing ? '• <strong>Responsável por Compras</strong><br/>' : ''}
-              ${!targetUserIsInventory && !targetUserIsPurchasing ? '• <strong>Colaborador Padrão</strong>' : ''}
-            </p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${inviteUrl}" style="background-color: #059669; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">
-                Clique aqui para Definir sua Senha
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; padding: 40px; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Genomma_Lab_Logo.png" alt="Genomma Lab" style="width: 120px; height: auto;">
+            </div>
+            <h2 style="color: #059669; font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 8px;">Bem-vindo à Genomma Logística</h2>
+            <p style="text-align: center; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 30px; font-weight: bold;">Convite de Acesso - CD Extrema/MG</p>
+            
+            <p style="font-size: 16px; line-height: 1.6;">Olá,</p>
+            <p style="font-size: 16px; line-height: 1.6;">Você acaba de receber permissão para acessar o sistema de gestão do <strong>CD Extrema</strong>. Com este acesso, você poderá colaborar nos seguintes módulos:</p>
+            
+            <div style="background-color: #f8fafc; border-radius: 16px; padding: 20px; margin: 25px 0; border: 1px solid #f1f5f9;">
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                ${targetUserIsInventory ? '<li style="margin-bottom: 10px; display: flex; align-items: center; font-weight: 600;">✅ Gestão de Insumos</li>' : ''}
+                ${targetUserCanMaintenance ? '<li style="margin-bottom: 10px; display: flex; align-items: center; font-weight: 600;">✅ Manutenção Predial</li>' : ''}
+                ${targetUserIsPurchasing ? '<li style="margin-bottom: 10px; display: flex; align-items: center; font-weight: 600;">✅ Gestão de Compras (Alertas)</li>' : ''}
+              </ul>
+            </div>
+            
+            <p style="font-size: 16px; line-height: 1.6;">Para ativar sua conta e definir sua senha de acesso, clique no botão abaixo:</p>
+            
+            <div style="text-align: center; margin: 40px 0;">
+              <a href="${inviteUrl}" style="background-color: #059669; color: white; padding: 18px 36px; text-decoration: none; border-radius: 14px; font-weight: 900; display: inline-block; font-size: 16px;">
+                ATIVAR MEU ACESSO AGORA
               </a>
             </div>
-            <p style="font-size: 11px; color: #999; text-align: center;">Genomma Logística • CD Extrema/MG</p>
+            
+            <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">
+              Genomma Logística • Operações CD Extrema/MG<br/>
+              Este é um convite pessoal e intransferível.
+            </p>
           </div>
         `;
         await handleRawEmailSend(targetUserEmail, "Acesso ao Sistema - Genomma Logística", htmlBody);
@@ -331,8 +359,9 @@ export default function App() {
       }
       
       setTargetUserEmail('');
-      setTargetUserIsInventory(false);
+      setTargetUserIsInventory(true);
       setTargetUserIsPurchasing(false);
+      setTargetUserCanMaintenance(true);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'users');
     } finally {
@@ -710,9 +739,9 @@ export default function App() {
               - CD Extrema / MG -
             </div>
             {currentInvite ? (
-              <div className="mt-2 px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-[10px] text-[10px] font-bold uppercase tracking-wider border border-emerald-100 flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                Bem-vindo! Finalize seu cadastro
+              <div className="mt-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-[12px] text-[10px] font-black uppercase tracking-widest border border-indigo-100 flex items-center justify-center gap-2 w-full">
+                <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                Ativação de Novo Colaborador
               </div>
             ) : (
               <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">
@@ -805,30 +834,34 @@ export default function App() {
 
             {currentInvite && (
               <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-xl text-[10px] text-emerald-700 leading-tight">
-                <strong>Dica:</strong> Se você já usa este e-mail no <strong>Google/Gmail</strong>, você não precisa criar uma senha local. Basta clicar no botão <strong>"Google Account"</strong> mais abaixo para entrar instantaneamente e ativar seu convite.
+                <strong>Dica:</strong> Se você já usa este e-mail no <strong>Google/Gmail</strong>, você não precisa criar uma senha local. Basta clicar no botão <strong>"Conta Google"</strong> mais abaixo para entrar instantaneamente e ativar seu convite.
               </div>
             )}
 
             {authError && <p className="text-xs text-red-500 font-medium ml-1">{authError}</p>}
 
-            <Button 
-              type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 rounded-xl font-bold transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
-            >
-              {currentInvite ? 'Criar minha Conta e Acessar' : (authMode === 'login' ? 'Entrar no Sistema' : 'Finalizar Cadastro')}
-            </Button>
-
-            <div className="text-center mt-2">
-              <button 
-                type="button"
-                onClick={() => {
-                  setAuthMode(authMode === 'login' ? 'register' : 'login');
-                  setAuthError(""); // Clear errors when switching
-                }}
-                className="text-[10px] text-slate-400 hover:text-emerald-600 uppercase font-bold tracking-widest transition-colors"
+            <div className="space-y-4 pt-2">
+              <Button 
+                type="submit"
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white h-12 rounded-xl font-black transition-all active:scale-[0.98] shadow-xl shadow-slate-200"
               >
-                {authMode === 'login' ? 'Não tem conta? Cadastrar-se' : 'Já tem uma conta? Faça login'}
-              </button>
+                {currentInvite ? 'Ativar Conta e Entrar' : (authMode === 'login' ? 'Entrar no Sistema' : 'Finalizar Cadastro')}
+              </Button>
+
+              {!currentInvite && (
+                <div className="text-center mt-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setAuthMode(authMode === 'login' ? 'register' : 'login');
+                      setAuthError(""); 
+                    }}
+                    className="text-[10px] text-slate-400 hover:text-emerald-600 uppercase font-black tracking-widest transition-colors"
+                  >
+                    {authMode === 'login' ? 'Não tem conta? Cadastrar-se' : 'Já tem uma conta? Faça login'}
+                  </button>
+                </div>
+              )}
             </div>
           </form>
 
@@ -867,7 +900,7 @@ export default function App() {
               variant="outline"
               className="w-full border-slate-200 rounded-xl h-12 text-slate-600 font-medium hover:bg-slate-50"
             >
-              Google Account
+              Conta Google
             </Button>
           </div>
           
@@ -890,12 +923,17 @@ export default function App() {
   }
 
   console.log("Main dashboard rendering...");
+
+  if (activeModule === 'maintenance') {
+    return <MaintenanceModule onBack={() => setActiveModule('home')} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#FBFCFD] text-slate-900 font-sans">
       <Toaster position="top-right" richColors closeButton />
       
       {/* Inventory Alert Banner */}
-      {showInventoryAlert && (
+      {showInventoryAlert && activeModule === 'inventory' && (
         <div className="bg-emerald-600 text-white px-6 py-2 flex items-center justify-center gap-2 text-sm font-medium animate-pulse">
           <Clock className="w-4 h-4" />
           🕒 HORÁRIO DE INVENTÁRIO: Iniciar conferência semanal agora (Segunda-feira @ 10h).
@@ -905,6 +943,11 @@ export default function App() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {activeModule !== 'home' && (
+            <Button variant="ghost" size="icon" onClick={() => setActiveModule('home')} className="rounded-xl mr-2">
+              <ArrowLeft className="w-5 h-5 text-slate-500" />
+            </Button>
+          )}
           <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Genomma_Lab_Logo.png" alt="Logo" className="w-8 h-8 rounded-lg object-contain" onError={(e) => e.currentTarget.style.display='none'} />
           <div>
             <h1 className="font-bold text-lg tracking-tight text-slate-900">Gestor <span className="font-medium text-slate-600">CD-GEN</span></h1>
@@ -914,10 +957,16 @@ export default function App() {
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-3 pr-4 border-r border-slate-200">
              <div className="text-right">
-              <p className="text-xs font-semibold text-slate-900">{user.displayName}</p>
+              <p className="text-xs font-semibold text-slate-900">{user.displayName || user.email?.split('@')[0]}</p>
               <p className="text-[10px] text-slate-400 font-mono">{user.email}</p>
             </div>
-            <img src={user.photoURL || ''} alt="" className="w-8 h-8 rounded-full border border-slate-200" referrerPolicy="no-referrer" />
+            {user.photoURL ? (
+              <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full border border-slate-200" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-[10px] font-bold text-emerald-600 border border-emerald-200 uppercase">
+                {user.displayName?.charAt(0) || user.email?.charAt(0)}
+              </div>
+            )}
           </div>
           
           {isSuperAdmin && (
@@ -926,30 +975,29 @@ export default function App() {
                 <Settings className="w-5 h-5" />
               </DialogTrigger>
               <DialogContent className="rounded-[2rem] border-slate-200 shadow-2xl p-0 overflow-hidden">
-                <div className="bg-emerald-600 p-8 text-white">
-                  <Settings className="w-10 h-10 mb-4 opacity-80" />
-                  <DialogTitle className="text-2xl font-bold">Configurações Avançadas</DialogTitle>
-                  <p className="text-emerald-100 text-xs mt-1">Gerencie os parâmetros globais da Genomma Logística.</p>
+                <div className="bg-slate-900 p-8 text-white">
+                  <Shield className="w-10 h-10 mb-4 opacity-80" />
+                  <DialogTitle className="text-2xl font-bold">Gestão de Equipe e Acessos</DialogTitle>
+                  <p className="text-slate-400 text-xs mt-1">Controle quem pode acessar cada módulo do CD Extrema/MG.</p>
                 </div>
                 <div className="p-8 space-y-6">
-                  <div className="grid gap-3">
-                    <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">E-mail do Responsável (Compras)</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
-                      <Input 
-                        placeholder="financeiro@empresa.com" 
-                        value={managerEmail} 
-                        onChange={(e) => setManagerEmail(e.target.value)}
-                        className="rounded-2xl h-14 pl-12 border-slate-200 focus:ring-emerald-500 text-slate-700 font-medium"
-                      />
+                  {isSuperAdmin && (
+                    <div className="grid gap-3">
+                      <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">E-mail do Responsável (Compras)</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                        <Input 
+                          placeholder="financeiro@empresa.com" 
+                          value={managerEmail} 
+                          onChange={(e) => setManagerEmail(e.target.value)}
+                          className="rounded-2xl h-14 pl-12 border-slate-200 focus:ring-emerald-500 text-slate-700 font-medium"
+                        />
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-400 leading-relaxed px-1">
-                      Este endereço receberá as solicitações de reposição quando você clicar em <span className="font-bold">"Gerar Lista de Compra"</span> no dashboard principal.
-                    </p>
-                  </div>
+                  )}
 
                   <div className="grid gap-3 pt-4 border-t border-slate-100">
-                    <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">Equipe e Acessos</Label>
+                    <Label className="text-[10px] font-bold uppercase text-slate-400 tracking-widest px-1">Novo Colaborador / Atualizar Acesso</Label>
                     <div className="space-y-4">
                       <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-3">
                         <Input 
@@ -958,18 +1006,24 @@ export default function App() {
                           onChange={(e) => setTargetUserEmail(e.target.value)}
                           className="rounded-xl h-10 border-slate-200 text-xs"
                         />
-                        <div className="flex items-center gap-4 px-1">
+                        <div className="grid grid-cols-2 gap-y-3 gap-x-4 px-1 pb-2">
                           <label className="flex items-center gap-2 cursor-pointer group">
                             <div onClick={() => setTargetUserIsInventory(!targetUserIsInventory)} className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${targetUserIsInventory ? 'bg-emerald-600 border-emerald-600' : 'bg-white border-slate-300 group-hover:border-emerald-400'}`}>
                               {targetUserIsInventory && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
                             </div>
-                            <span className="text-[10px] font-bold text-slate-600 uppercase">Resp. Inventário</span>
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Módulo Insumos</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer group">
-                            <div onClick={() => setTargetUserIsPurchasing(!targetUserIsPurchasing)} className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${targetUserIsPurchasing ? 'bg-emerald-600 border-emerald-600' : 'bg-white border-slate-300 group-hover:border-emerald-400'}`}>
+                            <div onClick={() => setTargetUserCanMaintenance(!targetUserCanMaintenance)} className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${targetUserCanMaintenance ? 'bg-amber-600 border-amber-600' : 'bg-white border-slate-300 group-hover:border-amber-400'}`}>
+                              {targetUserCanMaintenance && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Módulo Manutenção</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer group col-span-2 mt-1 pt-2 border-t border-slate-200/50">
+                            <div onClick={() => setTargetUserIsPurchasing(!targetUserIsPurchasing)} className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${targetUserIsPurchasing ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300 group-hover:border-blue-400'}`}>
                               {targetUserIsPurchasing && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
                             </div>
-                            <span className="text-[10px] font-bold text-slate-600 uppercase">Resp. Compras</span>
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Receber Alertas de Compra</span>
                           </label>
                         </div>
                         <Button 
@@ -978,7 +1032,7 @@ export default function App() {
                           disabled={isProcessingUser || !targetUserEmail}
                           className="w-full bg-slate-900 text-white rounded-xl h-10 font-bold"
                         >
-                          {isProcessingUser ? "Processando..." : "Configurar / Convidar"}
+                          {isProcessingUser ? "Processando..." : "Convidar"}
                         </Button>
                       </div>
 
@@ -987,56 +1041,58 @@ export default function App() {
                           <div key={u.id} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 group">
                             <div className="flex flex-col gap-0.5">
                               <span className={`text-xs font-bold leading-tight ${u.status === 'invited' ? 'text-slate-400' : 'text-slate-700'}`}>{u.email}</span>
-                              <div className="flex items-center gap-1.5">
-                                {(u.role === 'admin' || ADMIN_EMAILS.includes(u.email)) && <Badge className="text-[8px] bg-indigo-50 text-indigo-600 border-none px-1.5 py-0">ADMIN</Badge>}
-                                {u.isInventoryResponsible && <Badge className="text-[8px] bg-emerald-50 text-emerald-600 border-none px-1.5 py-0">RESP. INV</Badge>}
-                                {u.isPurchasingManager && <Badge className="text-[8px] bg-amber-50 text-amber-600 border-none px-1.5 py-0">COMPRAS</Badge>}
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                {(u.role === 'admin' || ADMIN_EMAILS.includes(u.email)) && <Badge className="text-[8px] bg-indigo-50 text-indigo-600 border-none px-1.5 py-0 uppercase">Administrador</Badge>}
+                                {u.isInventoryResponsible && <Badge className="text-[8px] bg-emerald-50 text-emerald-600 border-none px-1.5 py-0 uppercase tracking-tighter">Insumos</Badge>}
+                                {u.canAccessMaintenance !== false && <Badge className="text-[8px] bg-amber-50 text-amber-600 border-none px-1.5 py-0 uppercase tracking-tighter">Manutenção</Badge>}
+                                {u.isPurchasingManager && <Badge className="text-[8px] bg-blue-50 text-blue-600 border-none px-1.5 py-0 uppercase tracking-tighter">Compras</Badge>}
                                 {u.status === 'invited' && <Badge variant="outline" className="text-[8px] text-slate-400 border-slate-200 px-1.5 py-0 italic">PENDENTE</Badge>}
-                                {u.status === 'active' && <Badge className="text-[8px] bg-blue-50 text-blue-600 border-none px-1.5 py-0 font-bold">ATIVO</Badge>}
                               </div>
                             </div>
-                              <div className="flex items-center gap-1">
-                                {u.status === 'invited' && (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => {
-                                      const inviteUrl = SHARED_APP_URL + "?invite=" + u.id;
-                                      navigator.clipboard.writeText(inviteUrl);
-                                      toast.success("Link profissional copiado!");
-                                    }}
-                                    title="Copiar Link de Convite"
-                                    className="w-8 h-8 rounded-full text-emerald-600 hover:bg-emerald-50"
-                                  >
-                                    <Copy className="w-3.5 h-3.5" />
-                                  </Button>
-                                )}
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => {
+                                  setTargetUserEmail(u.email);
+                                  setTargetUserIsInventory(u.isInventoryResponsible);
+                                  setTargetUserIsPurchasing(u.isPurchasingManager);
+                                  setTargetUserCanMaintenance(u.canAccessMaintenance !== false);
+                                }}
+                                className="w-8 h-8 rounded-full text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all opacity-0 group-hover:opacity-100"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                              {u.status === 'active' && <Badge className="text-[8px] bg-blue-50 text-blue-600 border-none px-1.5 py-0 font-bold uppercase">ATIVO</Badge>}
+                              {u.status === 'invited' && (
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
-                                  onClick={() => handleRemoveUser(u.id)}
-                                  className="w-8 h-8 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                                  onClick={() => {
+                                    const inviteUrl = SHARED_APP_URL + "?invite=" + u.id;
+                                    navigator.clipboard.writeText(inviteUrl);
+                                    toast.success("Link profissional copiado!");
+                                  }}
+                                  title="Copiar Link de Convite"
+                                  className="w-8 h-8 rounded-full text-emerald-600 hover:bg-emerald-50"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Copy className="w-3.5 h-3.5" />
                                 </Button>
-                              </div>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleRemoveUser(u.id)}
+                                className="w-8 h-8 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
-
-                  {managerEmail && (
-                    <Button 
-                      variant="ghost" 
-                      disabled={sendingEmail}
-                      onClick={() => handleGeneratePurchaseList(true)}
-                      className="w-full text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl disabled:opacity-50"
-                    >
-                      <Mail className="w-3 h-3 mr-2" /> 
-                      {sendingEmail ? "Enviando..." : "Enviar E-mail de Teste"}
-                    </Button>
-                  )}
                 </div>
                 <div className="p-8 pt-0 flex gap-3">
                   <Button variant="outline" onClick={() => setIsSettingsOpen(false)} className="flex-1 rounded-2xl h-12 border-slate-200 font-bold text-slate-500">
@@ -1057,6 +1113,110 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto p-0">
+        {activeModule === 'home' ? (
+          <div className="p-6 md:p-10 space-y-12 animate-in fade-in duration-700">
+            <div className="text-center space-y-4 pt-10">
+              <h1 className="text-5xl font-black text-slate-900 tracking-tighter">
+                Sistema de Gestão <span style={{ color: '#002799', borderColor: '#e2e2f0' }}>CD-GEN</span>
+              </h1>
+              <p className="text-slate-500 max-w-2xl mx-auto text-lg leading-relaxed">
+                Bem-vindo ao sistema de gestão do Centro de Distribuição da Genomma Lab em Extrema/MG. Selecione o módulo que deseja acessar abaixo.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto pb-20">
+              {/* Card Materiais */}
+              <button 
+                onClick={() => {
+                  if (isAdmin || isSuperAdmin || userRecord?.isInventoryResponsible !== false) {
+                    setActiveModule('inventory');
+                  } else {
+                    toast.error("Acesso Negado", { description: "Você não tem permissão para acessar o módulo de Insumos." });
+                  }
+                }}
+                className={`group relative flex flex-col text-left transition-all outline-none ${!(isAdmin || isSuperAdmin || userRecord?.isInventoryResponsible !== false) ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:-translate-y-2 active:scale-95'}`}
+              >
+                <div className="h-full bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm hover:shadow-2xl hover:shadow-emerald-600/10 transition-all">
+                  <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-100/50 group-hover:shadow-emerald-600/30" style={{ backgroundColor: '#070766' }}>
+                    <Package className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-2xl font-black text-slate-900">Controle de Insumos</h3>
+                    {!(isAdmin || isSuperAdmin || userRecord?.isInventoryResponsible !== false) && <Shield className="w-4 h-4 text-slate-400" />}
+                  </div>
+                  <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                    Gestão exclusiva de materiais de apoio e insumos, inventário semanal e alertas de reposição.
+                  </p>
+                  <div className="mt-auto flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest text-emerald-600">
+                    {!(isAdmin || isSuperAdmin || userRecord?.isInventoryResponsible !== false) ? 'Acesso Restrito' : 'Acessar Módulo'} 
+                    <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Card Manutenção */}
+              <button 
+                onClick={() => {
+                  if (isAdmin || isSuperAdmin || userRecord?.canAccessMaintenance !== false) {
+                    setActiveModule('maintenance');
+                  } else {
+                    toast.error("Acesso Negado", { description: "Você não tem permissão para acessar o módulo de Manutenção." });
+                  }
+                }}
+                className={`group relative flex flex-col text-left transition-all outline-none ${!(isAdmin || isSuperAdmin || userRecord?.canAccessMaintenance !== false) ? 'opacity-50 grayscale cursor-not-allowed' : 'hover:-translate-y-2 active:scale-95'}`}
+              >
+                <div className="h-full bg-white rounded-[2.5rem] border border-slate-200/60 p-8 shadow-sm hover:shadow-2xl hover:shadow-amber-600/10 transition-all">
+                  <div className="w-16 h-16 bg-amber-100 rounded-3xl flex items-center justify-center mb-6 group-hover:bg-amber-600 transition-colors shadow-lg shadow-amber-100/50 group-hover:shadow-amber-600/30">
+                    <Wrench className="w-8 h-8 text-amber-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-2xl font-black text-slate-900">Manutenções CD</h3>
+                    {!(isAdmin || isSuperAdmin || userRecord?.canAccessMaintenance !== false) && <Shield className="w-4 h-4 text-slate-400" />}
+                  </div>
+                  <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                    Relatório de necessidades de manutenção, registro de problemas e controle de resolução.
+                  </p>
+                  <div className="mt-auto flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest text-amber-600">
+                    {!(isAdmin || isSuperAdmin || userRecord?.canAccessMaintenance !== false) ? 'Acesso Restrito' : 'Acessar Módulo'} 
+                    <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Card gestação de Usuários (Apenas Super Admin) */}
+              {isSuperAdmin && (
+                <button 
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="group relative flex flex-col text-left transition-all hover:-translate-y-2 active:scale-95 outline-none"
+                >
+                  <div className="h-full bg-slate-900 rounded-[2.5rem] border border-slate-800 p-8 shadow-sm hover:shadow-2xl hover:shadow-slate-900/20 transition-all">
+                    <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center mb-6 group-hover:bg-white transition-colors shadow-lg shadow-black/20">
+                      <Users className="w-8 h-8 text-white group-hover:text-slate-900 transition-colors" />
+                    </div>
+                    <h3 className="text-2xl font-black text-white mb-2">Gestão de Equipe</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed mb-8">
+                      Cadastre novos colaboradores e defina quais módulos cada um poderá acessar no sistema.
+                    </p>
+                    <div className="mt-auto flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest text-white/60">
+                      Configurar Acessos <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Card Próximo */}
+              <div className="relative flex flex-col opacity-50 grayscale">
+                <div className="h-full bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-300 p-8 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 bg-slate-200 rounded-3xl flex items-center justify-center mb-6">
+                    <Clock className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-400">Em breve</h3>
+                  <p className="text-slate-400 text-xs mt-2 uppercase tracking-widest leading-none font-bold">Novos Módulos</p>
+                </div>
+              </div>
+          </div>
+        </div>
+      ) : (
           <div className="p-6 md:p-10 space-y-10 animate-in fade-in duration-500">
             {/* Top Summary Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -1247,13 +1407,13 @@ export default function App() {
                   value="inventory" 
                   className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 py-2 transition-all font-medium text-xs uppercase tracking-wider"
                 >
-                  <Package className="w-3.5 h-3.5 mr-2" /> Inventário
+                  <Package className="w-3.5 h-3.5 mr-2" /> Estoque
                 </TabsTrigger>
                 <TabsTrigger 
                   value="history" 
                   className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 py-2 transition-all font-medium text-xs uppercase tracking-wider"
                 >
-                  <History className="w-3.5 h-3.5 mr-2" /> Log de Auditoria
+                  <History className="w-3.5 h-3.5 mr-2" /> Histórico
                 </TabsTrigger>
               </TabsList>
 
@@ -1272,7 +1432,7 @@ export default function App() {
                     <SelectValue placeholder="Categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="todas">Todas</SelectItem>
                     <SelectItem value="Embalagem">Embalagem</SelectItem>
                     <SelectItem value="Escritório">Escritório</SelectItem>
                     <SelectItem value="Limpeza">Limpeza</SelectItem>
@@ -1458,7 +1618,7 @@ export default function App() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-slate-100 px-6">
-                      <TableHead className="pl-8 font-bold text-[10px] uppercase tracking-widest text-slate-400">Timestamp</TableHead>
+                      <TableHead className="pl-8 font-bold text-[10px] uppercase tracking-widest text-slate-400">Data/Hora</TableHead>
                       <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Material</TableHead>
                       <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">Operação</TableHead>
                       <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 text-right">Quantidade</TableHead>
@@ -1501,57 +1661,60 @@ export default function App() {
           </Tabs>
         </div>
       </div>
+        )}
       </main>
 
       {/* Corporate Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-20">
-        <div className="max-w-7xl mx-auto px-10 py-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="flex items-center gap-3">
-              <div>
-              <p className="font-bold text-slate-900 text-sm">Gestor <span className="text-slate-600">CD-GEN</span></p>
-                <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest sr-only">Controle de Suprimentos v2.0</p>
+      {activeModule === 'inventory' && (
+        <footer className="bg-white border-t border-slate-200 mt-20">
+          <div className="max-w-7xl mx-auto px-10 py-10">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+              <div className="flex items-center gap-3">
+                <div>
+                <p className="font-bold text-slate-900 text-sm">Gestor <span className="text-slate-600">CD-GEN</span></p>
+                  <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest sr-only">Controle de Suprimentos v2.0</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <div className="flex flex-col gap-1 items-center md:items-start">
+                  <span className="text-slate-300">Inventários Agendados</span>
+                  <span className="text-emerald-600">Segundas-feiras @ 10:00</span>
+                </div>
               </div>
             </div>
             
-            <div className="flex gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              <div className="flex flex-col gap-1 items-center md:items-start">
-                <span className="text-slate-300">Inventários Agendados</span>
-                <span className="text-emerald-600">Segundas-feiras @ 10:00</span>
+            <div className="mt-10 pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex flex-col gap-1">
+                <p className="text-[9px] font-mono text-slate-300 uppercase leading-relaxed text-center md:text-left">
+                  Este sistema é de uso exclusivo para controle de estoque de materiais de apoio.<br/>
+                  Todas as movimentações são auditadas eletronicamente por {user.displayName}.
+                </p>
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md">
+                     <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                     <span className="text-[8px] font-black text-emerald-700 uppercase tracking-tighter">Status: Produção Sincronizada</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md">
+                     <Shield className="w-2.5 h-2.5 text-slate-400" />
+                     <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter">Build: {new Date().toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  <span className="text-[9px] font-bold text-slate-500 uppercase">Sistema Online</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                  <span className="text-[9px] font-bold text-slate-500 uppercase">Seguro via Firebase</span>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="mt-10 pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex flex-col gap-1">
-              <p className="text-[9px] font-mono text-slate-300 uppercase leading-relaxed text-center md:text-left">
-                Este sistema é de uso exclusivo para controle de estoque de materiais de apoio.<br/>
-                Todas as movimentações são auditadas eletronicamente por {user.displayName}.
-              </p>
-              <div className="flex items-center gap-3 mt-2">
-                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-md">
-                   <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                   <span className="text-[8px] font-black text-emerald-700 uppercase tracking-tighter">Status: Produção Sincronizada</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md">
-                   <Shield className="w-2.5 h-2.5 text-slate-400" />
-                   <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter">Build: {new Date().toLocaleDateString('pt-BR')}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                <span className="text-[9px] font-bold text-slate-500 uppercase">Sistema Online</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                <span className="text-[9px] font-bold text-slate-500 uppercase">Seguro via Firebase</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

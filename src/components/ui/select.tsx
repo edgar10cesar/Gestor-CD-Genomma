@@ -43,29 +43,30 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
-  position = "popper",
   ...props
 }: SelectPrimitive.Popup.Props) {
   return (
     <SelectPrimitive.Portal>
-      <SelectPrimitive.Popup
-        data-slot="select-content"
-        className={cn(
-          "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className
-        )}
-        {...props}
-      >
-        <SelectPrimitive.ScrollUpArrow className="flex cursor-default items-center justify-center py-1">
-          <ChevronUp className="h-4 w-4" />
-        </SelectPrimitive.ScrollUpArrow>
-        <div className="p-1">
-          {children}
-        </div>
-        <SelectPrimitive.ScrollDownArrow className="flex cursor-default items-center justify-center py-1">
-          <ChevronDown className="h-4 w-4" />
-        </SelectPrimitive.ScrollDownArrow>
-      </SelectPrimitive.Popup>
+      <SelectPrimitive.Positioner sideOffset={4} className="z-[100]">
+        <SelectPrimitive.Popup
+          data-slot="select-content"
+          className={cn(
+            "relative z-[100] max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            className
+          )}
+          {...props}
+        >
+          <SelectPrimitive.ScrollUpArrow className="flex cursor-default items-center justify-center py-1">
+            <ChevronUp className="h-4 w-4" />
+          </SelectPrimitive.ScrollUpArrow>
+          <div className="p-1">
+            {children}
+          </div>
+          <SelectPrimitive.ScrollDownArrow className="flex cursor-default items-center justify-center py-1">
+            <ChevronDown className="h-4 w-4" />
+          </SelectPrimitive.ScrollDownArrow>
+        </SelectPrimitive.Popup>
+      </SelectPrimitive.Positioner>
     </SelectPrimitive.Portal>
   )
 }

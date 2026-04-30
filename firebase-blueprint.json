@@ -28,9 +28,30 @@
         "joinedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["email", "isAdmin", "isInventoryResponsible", "status"]
+    },
+    "MaintenanceTicket": {
+      "title": "Maintenance Ticket",
+      "description": "A record of a maintenance need in the CD",
+      "type": "object",
+      "properties": {
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "in_progress", "resolved"] },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "extreme"] },
+        "photoUrl": { "type": "string" },
+        "reportedBy": { "type": "string" },
+        "reportedByName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["location", "description", "status", "reportedBy", "createdAt"]
     }
   },
   "firestore": {
+    "/maintenance_tickets/{ticketId}": {
+      "schema": "MaintenanceTicket",
+      "description": "Collection of maintenance requests"
+    },
     "/materials/{materialId}": {
       "schema": "Material",
       "description": "Storage for all materials"

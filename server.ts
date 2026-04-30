@@ -34,11 +34,14 @@ async function startServer() {
   app.use(express.json());
 
   const sendEmail = async ({ to, subject, text, html }: { to: string, subject: string, text?: string, html?: string }) => {
+    // Usando as chaves que você já tem configuradas nos Segredos
     const user = process.env.GMAIL_USER;
     const pass = process.env.GMAIL_APP_PASSWORD;
+    const fromName = process.env.GMAIL_FROM_NAME || "CD Genomma";
+    const fromEmail = process.env.GMAIL_FROM || user;
 
     if (!user || !pass) {
-      throw new Error("Configuração do Gmail ausente (GMAIL_USER ou GMAIL_APP_PASSWORD).");
+      throw new Error("Configuração de e-mail ausente nos Segredos (GMAIL_USER ou GMAIL_APP_PASSWORD).");
     }
 
     const transporter = nodemailer.createTransport({
@@ -48,9 +51,6 @@ async function startServer() {
         pass: pass,
       },
     });
-
-    const fromName = process.env.GMAIL_FROM_NAME || "Sistema de Inventário";
-    const fromEmail = process.env.GMAIL_FROM || user;
 
     return await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,

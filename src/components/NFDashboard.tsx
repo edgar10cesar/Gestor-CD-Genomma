@@ -54,10 +54,10 @@ export default function NFDashboard() {
         </p>
         <div className="flex gap-4">
           <Button variant="outline" className="rounded-xl border-slate-200 text-slate-500 font-bold px-8">
-            Ver Roadmap
+            Ver Cronograma
           </Button>
           <Button disabled className="bg-emerald-600/50 text-white rounded-xl font-bold px-8">
-            Acessar Alpha
+            Acessar Versão Alpha
           </Button>
         </div>
       </div>

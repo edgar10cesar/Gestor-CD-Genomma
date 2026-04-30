@@ -67,5 +67,22 @@ service cloud.firestore {
       allow update: if isAdmin() || (isSignedIn() && (request.auth.uid == userId || request.auth.token.email == existing().email));
       allow delete: if isAdmin();
     }
+
+    // Maintenance Ticket validation
+    function isValidTicket(data) {
+      return data.location is string && data.location.size() > 0 && data.location.size() <= 200 &&
+             data.description is string && data.description.size() > 0 && data.description.size() <= 2000 &&
+             data.status in ['open', 'in_progress', 'resolved'] &&
+             data.priority in ['low', 'medium', 'high', 'extreme'] &&
+             data.reportedBy == request.auth.uid &&
+             data.createdAt == request.time;
+    }
+
+    match /maintenance_tickets/{ticketId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidTicket(incoming());
+      allow update: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.reportedBy);
+      allow delete: if isSignedIn() && (isAdmin() || request.auth.uid == resource.data.reportedBy);
+    }
   }
 }
