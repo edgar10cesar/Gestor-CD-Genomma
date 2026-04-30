@@ -133,7 +133,22 @@ export default function App() {
   }, [dataLoading, user]);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
+      // Se for login via Google, validar se é o Cesar
+      if (u && u.providerData.some(p => p.providerId === 'google.com')) {
+        const email = u.email?.toLowerCase();
+        if (email !== 'cesar.802012@gmail.com') {
+          console.warn("Blocked Google login attempt from:", email);
+          await auth.signOut();
+          toast.error("Acesso restrito", {
+            description: "Apenas o administrador principal (cesar.802012@gmail.com) pode acessar via Google."
+          });
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+      }
+
       setUser(u);
       setLoading(false);
     });
@@ -324,7 +339,7 @@ export default function App() {
         const htmlBody = `
           <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; padding: 40px; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #0f172a; margin: 0; font-size: 24px;">Gestor CD-GEN</h1>
+              <h1 style="color: #0f172a; margin: 0; font-size: 28px; font-weight: 900;">Gestor CD-GEN</h1>
             </div>
             <h2 style="color: #059669; font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 8px;">Bem-vindo à Genomma Logística</h2>
             <p style="text-align: center; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 30px; font-weight: bold;">Convite de Acesso - CD Extrema/MG</p>
@@ -879,18 +894,15 @@ export default function App() {
             <Button 
               onClick={async () => {
                 try {
-                  const result = await signIn();
-                  if (result.user && result.user.email !== 'cesar.802012@gmail.com') {
-                    await signOut();
-                    toast.error("Acesso restrito", {
-                      description: "Apenas o administrador principal (cesar.802012@gmail.com) pode acessar via Google."
-                    });
-                  }
+                  await signIn();
+                  // A validação agora acontece no onAuthStateChanged para ser mais robusta
                 } catch (error: any) {
                   console.error("Login Error:", error);
-                  toast.error("Erro ao fazer login com Google", {
-                    description: error.message || "Verifique os domínios autorizados no Firebase."
-                  });
+                  if (error.code !== 'auth/popup-closed-by-user') {
+                    toast.error("Erro ao fazer login com Google", {
+                      description: error.message || "Verifique se os popups estão permitidos."
+                    });
+                  }
                 }
               }}
               variant="outline"
