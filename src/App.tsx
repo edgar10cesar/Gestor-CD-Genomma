@@ -408,12 +408,14 @@ export default function App() {
         try {
           errorData = JSON.parse(text);
         } catch (e) {
-          errorData = { error: `Erro do servidor (não JSON): ${text.substring(0, 100)}` };
+          errorData = { error: `Erro do servidor (Status ${response.status}): ${text.substring(0, 150) || '(Sem corpo de resposta)'}` };
         }
         
         const msg = errorData.error || "Erro desconhecido no servidor";
-        console.error("Failed to send invitation email:", errorData);
-        toast.error(`Falha no envio: ${msg}`);
+        console.error(`Failed to send invitation email (Status ${response.status}):`, errorData);
+        toast.error(`Falha no envio: ${msg}`, {
+          description: `Código de erro HTTP: ${response.status}. Tente usar 'Copiar Link' se o problema persistir.`
+        });
       }
     } catch (error: any) {
       console.error("Error sending email:", error);

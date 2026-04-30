@@ -126,18 +126,54 @@ async function startServer() {
 
   // API Route for sending email manually (kept for flexibility)
   app.post("/api/send-email", async (req, res) => {
+    console.log("[API] Recebido pedido de envio de e-mail para:", req.body?.to);
+    
+    // Timeout para evitar que a conexão fique pendente indefinidamente no Cloud Run
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Timeout ao processar envio de e-mail")), 25000)
+    );
+
     try {
       const { to, subject, text, html } = req.body;
-      const info = await sendEmail({ to, subject, text, html });
-      console.log("Message sent: %s", info.messageId);
-      res.json({ success: true, messageId: info.messageId });
-    } catch (err: any) {
-      console.error("Server error:", err);
-      let errorMessage = err.message;
-      if (errorMessage.includes("Invalid login")) {
-        errorMessage = "Falha na autenticação do Gmail. Verifique se você está usando uma 'Senha de App'.";
+      
+      if (!to || !subject) {
+        console.warn("[API] Pedido inválido: faltando 'to' ou 'subject'");
+        return res.status(400).json({ error: "Destinatário e assunto são obrigatórios." });
       }
-      res.status(500).json({ error: errorMessage });
+
+      // Race contra o timeout
+      const info: any = await Promise.race([
+        sendEmail({ to, subject, text, html }),
+        timeoutPromise
+      ]);
+
+      console.log("[API] E-mail enviado com sucesso! ID:", info.messageId);
+      return res.json({ success: true, messageId: info.messageId });
+    } catch (err: any) {
+      console.error("[API] Erro na rota /api/send-email:", err);
+      let errorMessage = err.message || "Erro desconhecido";
+      
+      if (errorMessage.includes("Invalid login") || errorMessage.includes("EAUTH")) {
+        errorMessage = "Falha na autenticação do Gmail. Verifique a Senha de App nos Segredos.";
+      } else if (errorMessage.includes("Timeout")) {
+        errorMessage = "O servidor de e-mail demorou muito para responder. Tente novamente ou use a opção de copiar link.";
+      }
+      
+      // Responde explicitamente com JSON sempre
+      if (!res.headersSent) {
+        return res.status(500).json({ 
+          error: errorMessage,
+          code: err.code || "INTERNAL_ERROR"
+        });
+      }
+    }
+  });
+
+  // Global Error Handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error("[Global Error]:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Erro crítico no servidor", details: err.message });
     }
   });
 

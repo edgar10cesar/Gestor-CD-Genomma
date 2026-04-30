@@ -343,99 +343,32 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-xl">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-50 px-4 md:px-6 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+          <Button variant="ghost" size="icon" onClick={onBack} className="rounded-xl h-9 w-9">
             <ArrowLeft className="w-5 h-5 text-slate-500" />
           </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Wrench className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-amber-500 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20 shrink-0">
+              <Wrench className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
-            <div>
-              <h1 className="font-bold text-lg tracking-tight text-slate-900">Manutenções <span className="font-medium border-slate-200" style={{ color: '#002799', borderColor: '#e2e2f0' }}>do CD</span></h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-0.5">Gestão de Infraestrutura</p>
+            <div className="overflow-hidden">
+              <h1 className="font-bold text-sm md:text-lg tracking-tight text-slate-900 truncate">Manutenções <span className="hidden sm:inline font-medium border-slate-200" style={{ color: '#002799', borderColor: '#e2e2f0' }}>do CD</span></h1>
+              <p className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-0.5">Gestão de Infraestrutura</p>
             </div>
           </div>
         </div>
 
-        {/* Dashboard Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <Card 
-            onClick={() => setFilter(filter === 'abertos' ? 'todos' : 'abertos')}
-            className={cn(
-              "rounded-2xl border-none shadow-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95",
-              filter === 'abertos' ? "bg-slate-900 text-white shadow-lg" : "bg-white"
-            )}
-          >
-            <span className={cn("text-2xl font-black", filter === 'abertos' ? "text-white" : "text-slate-900")}>
-              {tickets.filter(t => t.status !== 'resolved').length}
-            </span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", filter === 'abertos' ? "text-slate-300" : "text-slate-400")}>Abertas</span>
-          </Card>
-
-          <Card 
-            onClick={() => setFilter(filter === 'baixo' ? 'todos' : 'baixo')}
-            className={cn(
-              "rounded-2xl border-none shadow-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4",
-              filter === 'baixo' ? "bg-emerald-500 text-white border-emerald-600 shadow-lg" : "bg-emerald-50 border-emerald-500"
-            )}
-          >
-            <span className={cn("text-2xl font-black", filter === 'baixo' ? "text-white" : "text-emerald-700")}>
-              {tickets.filter(t => t.priority === 'low' && t.status !== 'resolved').length}
-            </span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", filter === 'baixo' ? "text-emerald-100" : "text-emerald-600")}>Baixas</span>
-          </Card>
-
-          <Card 
-            onClick={() => setFilter(filter === 'medio' ? 'todos' : 'medio')}
-            className={cn(
-              "rounded-2xl border-none shadow-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4",
-              filter === 'medio' ? "bg-amber-500 text-white border-amber-600 shadow-lg" : "bg-amber-50 border-amber-500"
-            )}
-          >
-            <span className={cn("text-2xl font-black", filter === 'medio' ? "text-white" : "text-amber-700")}>
-              {tickets.filter(t => t.priority === 'medium' && t.status !== 'resolved').length}
-            </span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", filter === 'medio' ? "text-amber-100" : "text-amber-600")}>Médias</span>
-          </Card>
-
-          <Card 
-            onClick={() => setFilter(filter === 'alto' ? 'todos' : 'alto')}
-            className={cn(
-              "rounded-2xl border-none shadow-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4",
-              filter === 'alto' ? "bg-red-500 text-white border-red-600 shadow-lg" : "bg-red-50 border-red-500"
-            )}
-          >
-            <span className={cn("text-2xl font-black", filter === 'alto' ? "text-white" : "text-red-700")}>
-              {tickets.filter(t => t.priority === 'high' && t.status !== 'resolved').length}
-            </span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", filter === 'alto' ? "text-red-100" : "text-red-600")}>Altas</span>
-          </Card>
-
-          <Card 
-            onClick={() => setFilter(filter === 'resolvidos' ? 'todos' : 'resolvidos')}
-            className={cn(
-              "rounded-2xl border-none shadow-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4",
-              filter === 'resolvidos' ? "bg-slate-500 text-white border-slate-600 shadow-lg" : "bg-slate-50 border-slate-400"
-            )}
-          >
-            <span className={cn("text-2xl font-black", filter === 'resolvidos' ? "text-white" : "text-slate-700")}>
-              {tickets.filter(t => t.status === 'resolved').length}
-            </span>
-            <span className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", filter === 'resolvidos' ? "text-slate-100" : "text-slate-500")}>Resolvidas</span>
-          </Card>
-        </div>
-
         <Dialog open={isAdding} onOpenChange={setIsAdding}>
           <DialogTrigger asChild>
-            <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-600/20 font-bold text-xs uppercase tracking-wider px-6 h-11">
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Solicitação
+            <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-600/20 font-bold text-[10px] md:text-xs uppercase tracking-wider px-4 md:px-6 h-9 md:h-11">
+              <Plus className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Nova Solicitação</span>
+              <span className="md:hidden">Novo</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-8 max-w-md">
-            <DialogHeader className="mb-6">
+          <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md">
+            <DialogHeader className="mb-4 sm:mb-6">
               <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">Nova Manutenção</DialogTitle>
               <p className="text-sm text-slate-500 font-medium leading-relaxed">Descreva o problema encontrado no CD.</p>
             </DialogHeader>
@@ -554,10 +487,77 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         </Dialog>
       </header>
 
-      <main className="max-w-7xl mx-auto p-6 md:p-10 w-full space-y-4 animate-in fade-in duration-500">
+      <main className="max-w-7xl mx-auto p-4 md:p-10 w-full space-y-6 animate-in fade-in duration-500">
+        {/* Dashboard Summary moved to main content area for better mobile experience */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          <Card 
+            onClick={() => setFilter(filter === 'abertos' ? 'todos' : 'abertos')}
+            className={cn(
+              "rounded-2xl border-none shadow-sm p-3 sm:p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95",
+              filter === 'abertos' ? "bg-slate-900 text-white shadow-lg" : "bg-white"
+            )}
+          >
+            <span className={cn("text-xl sm:text-2xl font-black", filter === 'abertos' ? "text-white" : "text-slate-900")}>
+              {tickets.filter(t => t.status !== 'resolved').length}
+            </span>
+            <span className={cn("text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 text-slate-400", filter === 'abertos' && "text-slate-300")}>Abertas</span>
+          </Card>
+          
+          <Card 
+            onClick={() => setFilter(filter === 'baixo' ? 'todos' : 'baixo')}
+            className={cn(
+              "rounded-2xl border-none shadow-sm p-3 sm:p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4",
+              filter === 'baixo' ? "bg-emerald-500 text-white border-emerald-600 shadow-lg" : "bg-emerald-50 border-emerald-500"
+            )}
+          >
+            <span className={cn("text-xl sm:text-2xl font-black", filter === 'baixo' ? "text-white" : "text-emerald-700")}>
+              {tickets.filter(t => t.priority === 'low' && t.status !== 'resolved').length}
+            </span>
+            <span className={cn("text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 text-emerald-600", filter === 'baixo' && "text-emerald-100")}>Baixas</span>
+          </Card>
+
+          <Card 
+            onClick={() => setFilter(filter === 'medio' ? 'todos' : 'medio')}
+            className={cn(
+              "rounded-2xl border-none shadow-sm p-3 sm:p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4",
+              filter === 'medio' ? "bg-amber-500 text-white border-amber-600 shadow-lg" : "bg-amber-50 border-amber-500"
+            )}
+          >
+            <span className={cn("text-xl sm:text-2xl font-black", filter === 'medio' ? "text-white" : "text-amber-700")}>
+              {tickets.filter(t => t.priority === 'medium' && t.status !== 'resolved').length}
+            </span>
+            <span className={cn("text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 text-amber-600", filter === 'medio' && "text-amber-100")}>Médias</span>
+          </Card>
+
+          <Card 
+            onClick={() => setFilter(filter === 'alto' ? 'todos' : 'alto')}
+            className={cn(
+              "rounded-2xl border-none shadow-sm p-3 sm:p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4",
+              filter === 'alto' ? "bg-red-500 text-white border-red-600 shadow-lg" : "bg-red-50 border-red-500"
+            )}
+          >
+            <span className={cn("text-xl sm:text-2xl font-black", filter === 'alto' ? "text-white" : "text-red-700")}>
+              {tickets.filter(t => t.priority === 'high' && t.status !== 'resolved').length}
+            </span>
+            <span className={cn("text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 text-red-600", filter === 'alto' && "text-red-100")}>Altas</span>
+          </Card>
+
+          <Card 
+            onClick={() => setFilter(filter === 'resolvidos' ? 'todos' : 'resolvidos')}
+            className={cn(
+              "rounded-2xl border-none shadow-sm p-3 sm:p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:scale-105 active:scale-95 border-t-4 col-span-2 sm:col-span-1",
+              filter === 'resolvidos' ? "bg-slate-500 text-white border-slate-600 shadow-lg" : "bg-slate-50 border-slate-400"
+            )}
+          >
+            <span className={cn("text-xl sm:text-2xl font-black", filter === 'resolvidos' ? "text-white" : "text-slate-700")}>
+              {tickets.filter(t => t.status === 'resolved').length}
+            </span>
+            <span className={cn("text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 text-slate-500", filter === 'resolvidos' && "text-slate-100")}>Resolvidas</span>
+          </Card>
+        </div>
         {/* Filtros e Busca */}
-        <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
+        <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm mb-6 flex flex-col gap-4">
+          <div className="relative w-full">
             <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Buscar por local ou descrição..." 
@@ -567,9 +567,9 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
             />
           </div>
           
-          <div className="flex gap-3 w-full md:w-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:flex gap-3 w-full items-center">
             <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
-              <SelectTrigger className="w-full md:w-[160px] rounded-2xl h-12 border-slate-100 bg-slate-50/50 text-xs font-bold uppercase tracking-wider">
+              <SelectTrigger className="w-full rounded-2xl h-11 border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-slate-100">
@@ -581,34 +581,34 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
             </Select>
 
             <Select value={priorityFilter} onValueChange={(val: any) => setPriorityFilter(val)}>
-              <SelectTrigger className="w-full md:w-[160px] rounded-2xl h-12 border-slate-100 bg-slate-50/50 text-xs font-bold uppercase tracking-wider">
+              <SelectTrigger className="w-full rounded-2xl h-11 border-slate-100 bg-slate-50/50 text-[10px] font-bold uppercase tracking-wider">
                 <SelectValue placeholder="Prioridade" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-slate-100">
-                <SelectItem value="todos">Todas as Prioridades</SelectItem>
+                <SelectItem value="todos">Todas Prioridades</SelectItem>
                 <SelectItem value="low">Baixa</SelectItem>
                 <SelectItem value="medium">Média</SelectItem>
                 <SelectItem value="high">Alta</SelectItem>
               </SelectContent>
             </Select>
 
-            <div className="flex items-center gap-2 bg-slate-50/50 border border-slate-100 rounded-2xl px-4 h-12">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">De:</span>
+            <div className="flex items-center gap-2 bg-slate-50/50 border border-slate-100 rounded-2xl px-3 h-11">
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Início:</span>
               <input 
                 type="date" 
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent border-none text-[10px] font-bold text-slate-600 outline-none w-28"
+                className="bg-transparent border-none text-[10px] font-bold text-slate-600 outline-none w-full"
               />
             </div>
 
-            <div className="flex items-center gap-2 bg-slate-50/50 border border-slate-100 rounded-2xl px-4 h-12">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Até:</span>
+            <div className="flex items-center gap-2 bg-slate-50/50 border border-slate-100 rounded-2xl px-3 h-11">
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Fim:</span>
               <input 
                 type="date" 
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent border-none text-[10px] font-bold text-slate-600 outline-none w-28"
+                className="bg-transparent border-none text-[10px] font-bold text-slate-600 outline-none w-full"
               />
             </div>
 
@@ -623,10 +623,11 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                   setStartDate('');
                   setEndDate('');
                 }}
-                className="h-12 w-12 p-0 rounded-2xl hover:bg-slate-100 text-slate-400 transition-all active:scale-90"
+                className="h-11 w-11 p-0 rounded-2xl hover:bg-slate-100 text-slate-400 transition-all active:scale-90 col-span-2 justify-self-center lg:col-span-1"
                 title="Limpar Filtros"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 mr-2 lg:mr-0" />
+                <span className="lg:hidden text-[10px] font-bold uppercase">Limpar Filtros</span>
               </Button>
             )}
           </div>
@@ -725,19 +726,35 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
             <div 
               key={ticket.id} 
               onClick={() => openView(ticket)}
-              className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center bg-white p-5 md:px-8 md:py-5 rounded-[2rem] border border-slate-100 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-900/5 transition-all cursor-pointer group relative overflow-hidden"
+              className="flex flex-col md:grid md:grid-cols-12 gap-4 items-stretch md:items-center bg-white p-5 md:px-8 md:py-5 rounded-[2rem] border border-slate-100 hover:border-amber-500/30 hover:shadow-xl hover:shadow-amber-900/5 transition-all cursor-pointer group relative overflow-hidden"
             >
               {/* Indicador lateral de prioridade */}
               <div className={cn(
-                "absolute left-0 top-0 bottom-0 w-2",
+                "absolute left-0 top-0 bottom-0 w-1.5 md:w-2",
                 ticket.priority === 'low' ? 'bg-emerald-500' :
                 ticket.priority === 'medium' ? 'bg-amber-500' :
                 ticket.priority === 'high' ? 'bg-red-500' :
                 'bg-slate-200'
               )} />
 
-              {/* Data de Abertura */}
-              <div className="col-span-2 flex items-center gap-3">
+              {/* Mobile: Top Row (Status + Date) */}
+              <div className="flex md:hidden justify-between items-center mb-1">
+                 <Badge className={cn(
+                  "rounded-full px-3 py-0.5 text-[8px] font-black uppercase tracking-wider border select-none shadow-sm",
+                  ticket.status === 'open' ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                  ticket.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse' :
+                  'bg-emerald-500 text-white border-emerald-600'
+                )}>
+                  {ticket.status === 'open' ? 'Pendente' : 
+                   ticket.status === 'in_progress' ? 'Em Andamento' : 'Finalizado'}
+                </Badge>
+                <span className="text-[10px] font-bold text-slate-400">
+                  {ticket.createdAt?.seconds ? new Date(ticket.createdAt.seconds * 1000).toLocaleDateString('pt-BR') : '--/--'}
+                </span>
+              </div>
+
+              {/* Data de Abertura (Desktop) */}
+              <div className="hidden md:flex col-span-2 items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:bg-amber-50 transition-colors">
                   <Clock className="w-4 h-4 text-slate-400 group-hover:text-amber-500" />
                 </div>
@@ -752,12 +769,23 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
               </div>
 
               {/* Nome / Local */}
-              <div className="col-span-4 flex flex-col gap-0.5">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-sm font-black text-slate-900 tracking-tight">{ticket.location}</span>
+              <div className="md:col-span-4 flex flex-col gap-1">
+                <div className="flex items-center justify-between md:justify-start gap-2">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-sm md:text-base font-black text-slate-900 tracking-tight">{ticket.location}</span>
+                  </div>
+                  <Badge className={cn(
+                    "md:hidden rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-wider border",
+                    ticket.priority === 'low' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                    ticket.priority === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                    ticket.priority === 'high' ? 'bg-red-50 text-red-700 border-red-100' :
+                    'bg-slate-50 text-slate-600 border-slate-100'
+                  )}>
+                    {priorityLabels[ticket.priority || ''] || 'Normal'}
+                  </Badge>
                 </div>
-                <p className="text-xs text-slate-500 line-clamp-1 font-medium italic">"{ticket.description}"</p>
+                <p className="text-xs text-slate-500 line-clamp-2 md:line-clamp-1 font-medium italic">"{ticket.description}"</p>
                 {ticket.isSafetyRisk && (
                   <span className="text-[8px] font-black text-red-600 uppercase tracking-widest mt-1 flex items-center gap-1">
                     <AlertCircle className="w-2.5 h-2.5" /> Risco de Segurança
@@ -765,8 +793,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                 )}
               </div>
 
-              {/* Criticidade */}
-              <div className="col-span-2 flex justify-center">
+              {/* Criticidade (Desktop) */}
+              <div className="hidden md:flex col-span-2 justify-center">
                 <Badge className={cn(
                   "rounded-full px-4 py-1 text-[9px] font-black uppercase tracking-wider border text-center min-w-[80px] flex justify-center",
                   ticket.priority === 'low' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
@@ -778,8 +806,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                 </Badge>
               </div>
 
-              {/* Status */}
-              <div className="col-span-2 flex justify-center">
+              {/* Status (Desktop) */}
+              <div className="hidden md:flex col-span-2 justify-center">
                 <Badge className={cn(
                   "rounded-full px-4 py-1 text-[9px] font-black uppercase tracking-wider border min-w-[100px] flex justify-center select-none shadow-sm",
                   ticket.status === 'open' ? 'bg-slate-100 text-slate-500 border-slate-200' :
@@ -792,7 +820,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
               </div>
 
               {/* Ações */}
-              <div className="col-span-2 flex justify-end items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="md:col-span-2 flex justify-end items-center gap-2 mt-2 md:mt-0 pt-3 md:pt-0 border-t md:border-none border-slate-50" onClick={(e) => e.stopPropagation()}>
                 {ticket.status !== 'resolved' && (
                    <Button 
                     variant="ghost" 
@@ -852,8 +880,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
 
       {/* Edit Dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-8 max-w-md">
-          <DialogHeader className="mb-6">
+        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md">
+          <DialogHeader className="mb-4 sm:mb-6">
             <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">Editar Manutenção</DialogTitle>
             <p className="text-sm text-slate-500 font-medium leading-relaxed">Atualize os detalhes da solicitação.</p>
           </DialogHeader>
@@ -984,20 +1012,20 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
 
       {/* View Details Dialog */}
       <Dialog open={isViewing} onOpenChange={setIsViewing}>
-        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-0 max-w-2xl overflow-hidden">
+        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-0 max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
           {selectedTicket && (
-            <div className="flex flex-col">
+            <div className="flex flex-col overflow-y-auto">
               <div className={cn(
-                "h-3 w-full",
+                "h-2 w-full flex-shrink-0",
                 selectedTicket.priority === 'low' ? 'bg-emerald-500' :
                 selectedTicket.priority === 'medium' ? 'bg-amber-500' :
                 selectedTicket.priority === 'high' ? 'bg-red-500' :
                 'bg-slate-200'
               )} />
               
-              <div className="p-8">
+              <div className="p-6 sm:p-8">
                 <DialogHeader className="mb-6">
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex flex-wrap gap-2 mb-4">
                     <Badge className={cn(
                       "rounded-lg px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border",
                       selectedTicket.status === 'open' ? 'bg-amber-100 text-amber-700 border-amber-200' :
@@ -1118,8 +1146,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
 
       {/* Resolution Dialog */}
       <Dialog open={isResolving} onOpenChange={setIsResolving}>
-        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-8 max-w-md">
-          <DialogHeader className="mb-6">
+        <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md">
+          <DialogHeader className="mb-4 sm:mb-6">
             <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               <CheckCircle2 className="w-6 h-6 text-emerald-500" />
               Finalizar Manutenção
