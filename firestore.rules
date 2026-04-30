@@ -32,7 +32,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'cesar.802012@gmail.com';
+      return isSignedIn() && (request.auth.token.email.lower() == 'cesar.802012@gmail.com' || request.auth.token.email.lower() == 'gencdgen@gmail.com');
     }
 
     match /materials/{materialId} {

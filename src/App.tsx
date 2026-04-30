@@ -54,7 +54,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MaintenanceModule from './components/MaintenanceModule';
 
-const ADMIN_EMAILS = ['cesar.802012@gmail.com'];
+const ADMIN_EMAILS = ['cesar.802012@gmail.com', 'gencdgen@gmail.com'];
 const SHARED_APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
 
 export default function App() {
@@ -75,9 +75,10 @@ export default function App() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const lastAlertedRef = React.useRef<Record<string, number>>({});
   // Check if current user is admin
-  const userRecord = allUsers.find(u => u.email === user?.email);
-  const isAdmin = user?.email && (ADMIN_EMAILS.includes(user.email) || userRecord?.role === 'admin');
-  const isSuperAdmin = user?.email === 'cesar.802012@gmail.com';
+  const userEmail = user?.email?.toLowerCase()?.trim();
+  const userRecord = allUsers.find(u => u.email?.toLowerCase()?.trim() === userEmail);
+  const isAdmin = userEmail && (ADMIN_EMAILS.includes(userEmail) || userRecord?.role === 'admin');
+  const isSuperAdmin = userEmail && ADMIN_EMAILS.includes(userEmail);
 
   // New Material Form State
   const [isAdding, setIsAdding] = useState(false);
@@ -134,14 +135,14 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (u) => {
-      // Se for login via Google, validar se é o Cesar
+      // Se for login via Google, validar se é um admin autorizado
       if (u && u.providerData.some(p => p.providerId === 'google.com')) {
         const email = u.email?.toLowerCase();
-        if (email !== 'cesar.802012@gmail.com') {
+        if (email && !ADMIN_EMAILS.includes(email)) {
           console.warn("Blocked Google login attempt from:", email);
           await auth.signOut();
           toast.error("Acesso restrito", {
-            description: "Apenas o administrador principal (cesar.802012@gmail.com) pode acessar via Google."
+            description: "Apenas administradores autorizados podem acessar via Google."
           });
           setUser(null);
           setLoading(false);
@@ -1049,7 +1050,7 @@ export default function App() {
                             <div className="flex flex-col gap-0.5">
                               <span className={`text-xs font-bold leading-tight ${u.status === 'invited' ? 'text-slate-400' : 'text-slate-700'}`}>{u.email}</span>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                {(u.role === 'admin' || ADMIN_EMAILS.includes(u.email)) && <Badge className="text-[8px] bg-indigo-50 text-indigo-600 border-none px-1.5 py-0 uppercase">Administrador</Badge>}
+                                {(u.role === 'admin' || (u.email && ADMIN_EMAILS.includes(u.email.toLowerCase()))) && <Badge className="text-[8px] bg-indigo-50 text-indigo-600 border-none px-1.5 py-0 uppercase">Administrador</Badge>}
                                 {u.isInventoryResponsible && <Badge className="text-[8px] bg-emerald-50 text-emerald-600 border-none px-1.5 py-0 uppercase tracking-tighter">Insumos</Badge>}
                                 {u.canAccessMaintenance !== false && <Badge className="text-[8px] bg-amber-50 text-amber-600 border-none px-1.5 py-0 uppercase tracking-tighter">Manutenção</Badge>}
                                 {u.isPurchasingManager && <Badge className="text-[8px] bg-blue-50 text-blue-600 border-none px-1.5 py-0 uppercase tracking-tighter">Compras</Badge>}
