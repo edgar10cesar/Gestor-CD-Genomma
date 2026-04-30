@@ -403,7 +403,14 @@ export default function App() {
       if (response.ok) {
         toast.success(`E-mail de convite enviado para ${to}`);
       } else {
-        const errorData = await response.json().catch(() => ({ error: "Erro ao processar resposta do servidor" }));
+        const text = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(text);
+        } catch (e) {
+          errorData = { error: `Erro do servidor (não JSON): ${text.substring(0, 100)}` };
+        }
+        
         const msg = errorData.error || "Erro desconhecido no servidor";
         console.error("Failed to send invitation email:", errorData);
         toast.error(`Falha no envio: ${msg}`);

@@ -36,14 +36,14 @@ async function startServer() {
   const sendEmail = async ({ to, subject, text, html }: { to: string, subject: string, text?: string, html?: string }) => {
     // Usando as chaves que você já tem configuradas nos Segredos
     const user = process.env.GMAIL_USER;
-    const pass = process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_APP_PASSWO; // Aceita versão truncada se existir
+    const pass = process.env.GMAIL_APP_PASSWORD;
     const fromName = process.env.GMAIL_FROM_NAME || "CD Genomma";
     const fromEmail = process.env.GMAIL_FROM || user;
 
     console.log(`[Email] Tentando enviar e-mail para ${to} usando o usuário: ${user}`);
 
     if (!user || !pass) {
-      console.error("[Email] Erro: Configuração de e-mail ausente (GMAIL_USER ou GMAIL_APP_PASSWORD/GMAIL_APP_PASSWO)");
+      console.error("[Email] Erro: Configuração de e-mail ausente (GMAIL_USER ou GMAIL_APP_PASSWORD)");
       throw new Error("Configuração de e-mail ausente nos Segredos (GMAIL_USER ou GMAIL_APP_PASSWORD).");
     }
 
