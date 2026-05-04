@@ -52,6 +52,7 @@ interface MaintenanceTicket {
   photoUrls?: string[];
   createdAt: any;
   updatedAt?: any;
+  resolvedAt?: any;
 }
 
 const priorityLabels: Record<string, string> = {
@@ -79,6 +80,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
   const [selectedTicket, setSelectedTicket] = useState<MaintenanceTicket | null>(null);
   const [resolvingTicket, setResolvingTicket] = useState<MaintenanceTicket | null>(null);
   const [resolutionInput, setResolutionInput] = useState('');
+  const [resolutionDateInput, setResolutionDateInput] = useState(new Date().toISOString().split('T')[0]);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
   
@@ -368,7 +370,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
     setCurrentImageIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length);
   };
 
-  const updateStatus = async (id: string, newStatus: 'in_progress' | 'resolved', resolution?: string) => {
+  const updateStatus = async (id: string, newStatus: 'in_progress' | 'resolved', resolution?: string, resolutionDate?: string) => {
     setIsSaving(true);
     try {
       const updateData: any = {
@@ -379,6 +381,9 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         updateData.resolution = resolution;
         updateData.resolutionByName = user?.displayName || user?.email;
       }
+      if (resolutionDate && newStatus === 'resolved') {
+        updateData.resolvedAt = resolutionDate;
+      }
 
       await updateDoc(doc(db, 'maintenance_tickets', id), updateData);
       toast.success(newStatus === 'resolved' ? "Manutenção finalizada!" : "Manutenção iniciada!");
@@ -387,6 +392,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         setIsResolving(false);
         setResolvingTicket(null);
         setResolutionInput('');
+        setResolutionDateInput(new Date().toISOString().split('T')[0]);
       }
     } catch (error: any) {
       console.error("Error updating status:", error);
@@ -1204,7 +1210,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
                           <CheckCircle2 className="w-3 h-3" />
-                          Ação Registrada
+                          Ação Registrada {selectedTicket.resolvedAt && `em ${new Date(selectedTicket.resolvedAt + 'T12:00:00').toLocaleDateString('pt-BR')}`}
                         </Label>
                         <div className="p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100 shadow-inner">
                           <p className="text-sm text-emerald-700 leading-relaxed font-bold italic">
@@ -1293,6 +1299,18 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
           <div className="space-y-6">
             <div className="space-y-2">
               <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Clock className="w-3 h-3 text-emerald-500" />
+                Data de Finalização
+              </Label>
+              <Input 
+                type="date"
+                value={resolutionDateInput}
+                onChange={(e) => setResolutionDateInput(e.target.value)}
+                className="rounded-xl h-11 border-slate-200 focus:ring-emerald-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                 Resolução / Ações Tomadas
               </Label>
@@ -1311,13 +1329,14 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                 setIsResolving(false);
                 setResolvingTicket(null);
                 setResolutionInput('');
+                setResolutionDateInput(new Date().toISOString().split('T')[0]);
               }}
               className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-12 flex-1"
             >
               Voltar
             </Button>
             <Button 
-              onClick={() => resolvingTicket && updateStatus(resolvingTicket.id, 'resolved', resolutionInput)}
+              onClick={() => resolvingTicket && updateStatus(resolvingTicket.id, 'resolved', resolutionInput, resolutionDateInput)}
               disabled={isSaving}
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 font-bold uppercase tracking-widest text-[10px] h-12 flex-1"
             >
