@@ -974,7 +974,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-200 bg-white/50 backdrop-blur-sm p-8 text-center text-slate-400">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em]">Gestor CD-GEN • Manutenções</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em]">CD-GEN • Manutenções</p>
       </footer>
 
       {/* Edit Dialog */}

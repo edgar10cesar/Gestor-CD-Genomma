@@ -343,7 +343,7 @@ export default function App() {
         const htmlBody = `
           <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; padding: 40px; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #0f172a; margin: 0; font-size: 28px; font-weight: 900;">Gestor CD-GEN</h1>
+              <h1 style="color: #0f172a; margin: 0; font-size: 28px; font-weight: 900;">CD-GEN</h1>
             </div>
             <h2 style="color: #059669; font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 8px;">Bem-vindo à Genomma Logística</h2>
             <p style="text-align: center; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 30px; font-weight: bold;">Convite de Acesso - CD Extrema/MG</p>
@@ -744,7 +744,7 @@ export default function App() {
       <div className="flex items-center justify-center min-h-screen bg-[#F9FAFB]">
         <div className="flex flex-col items-center gap-6">
           <div className="flex flex-col items-center gap-1">
-            <div className="text-sm font-black text-slate-900 uppercase tracking-widest">Gestor CD-GEN</div>
+            <div className="text-sm font-black text-slate-900 uppercase tracking-widest">CD-GEN</div>
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] animate-pulse">Autenticando...</div>
           </div>
         </div>
@@ -758,8 +758,8 @@ export default function App() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#F9FAFB] p-4 font-sans">
         <div className="w-full max-w-md p-10 bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/50">
           <div className="mb-10 flex flex-col items-center text-center">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">
-              Gestor <span className="text-emerald-600">CD-GEN</span>
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-1">
+              <span className="text-emerald-600">CD-GEN</span>
             </h1>
             <div className="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-4">
               - CD Extrema / MG -
@@ -974,7 +974,9 @@ export default function App() {
             </Button>
           )}
           <div>
-            <h1 className="font-bold text-lg tracking-tight text-slate-900">Gestor <span className="font-medium text-slate-600">CD-GEN</span></h1>
+            <h1 className="font-black text-xl tracking-tighter text-slate-900">
+              <span className="text-emerald-600">CD-GEN</span>
+            </h1>
           </div>
         </div>
         
@@ -1721,7 +1723,7 @@ export default function App() {
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
               <div className="flex items-center gap-3">
                 <div>
-                <p className="font-bold text-slate-900 text-sm">Gestor <span className="text-slate-600">CD-GEN</span></p>
+                <p className="font-black text-slate-900 text-sm italic tracking-tighter text-emerald-600">CD-GEN</p>
                   <p className="text-[10px] font-mono text-slate-400 uppercase tracking-widest sr-only">Controle de Suprimentos v2.0</p>
                 </div>
               </div>
