@@ -42,6 +42,8 @@ interface MaintenanceTicket {
   location: string;
   description: string;
   resolution?: string;
+  resolutionDateEstimate?: string;
+  resolutionByName?: string;
   status: 'open' | 'in_progress' | 'resolved';
   priority?: 'low' | 'medium' | 'high' | '';
   isSafetyRisk: boolean;
@@ -85,6 +87,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
     description: '',
     priority: '' as 'low' | 'medium' | 'high' | '',
     isSafetyRisk: false,
+    resolutionDateEstimate: '',
     photos: [] as string[],
   });
 
@@ -92,6 +95,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
     location: '',
     description: '',
     resolution: '',
+    resolutionDateEstimate: '',
     priority: '' as 'low' | 'medium' | 'high' | '',
     isSafetyRisk: false,
     photos: [] as string[],
@@ -229,6 +233,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         description: newTicket.description,
         priority: newTicket.priority,
         isSafetyRisk: newTicket.isSafetyRisk,
+        resolutionDateEstimate: newTicket.resolutionDateEstimate,
         photoUrls: newTicket.photos,
         status: 'open',
         reportedBy: user?.uid,
@@ -237,7 +242,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
       });
       
       setIsAdding(false);
-      setNewTicket({ location: '', description: '', priority: '', isSafetyRisk: false, photos: [] });
+      setNewTicket({ location: '', description: '', priority: '', isSafetyRisk: false, resolutionDateEstimate: '', photos: [] });
       toast.success("Solicitação de manutenção enviada!");
     } catch (error: any) {
       console.error("[Maintenance] Erro ao adicionar:", error);
@@ -276,6 +281,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         location: editForm.location,
         description: editForm.description,
         resolution: editForm.resolution || '',
+        resolutionDateEstimate: editForm.resolutionDateEstimate || '',
         priority: editForm.priority,
         isSafetyRisk: editForm.isSafetyRisk,
         photoUrls: editForm.photos,
@@ -333,6 +339,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
       location: ticket.location,
       description: ticket.description,
       resolution: ticket.resolution || '',
+      resolutionDateEstimate: ticket.resolutionDateEstimate || '',
       priority: ticket.priority || '',
       isSafetyRisk: ticket.isSafetyRisk || false,
       photos: ticket.photoUrls || [],
@@ -368,7 +375,10 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         status: newStatus,
         updatedAt: serverTimestamp()
       };
-      if (resolution) updateData.resolution = resolution;
+      if (resolution) {
+        updateData.resolution = resolution;
+        updateData.resolutionByName = user?.displayName || user?.email;
+      }
 
       await updateDoc(doc(db, 'maintenance_tickets', id), updateData);
       toast.success(newStatus === 'resolved' ? "Manutenção finalizada!" : "Manutenção iniciada!");
@@ -475,6 +485,18 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                       <SelectItem value="high">Alta</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-amber-500" />
+                    Previsão de Resolução
+                  </Label>
+                  <Input 
+                    placeholder="Ex: 05/05/2026 ou Próxima semana"
+                    value={newTicket.resolutionDateEstimate}
+                    onChange={(e) => setNewTicket({...newTicket, resolutionDateEstimate: e.target.value})}
+                    className="rounded-xl h-11 border-slate-200 focus:ring-amber-500"
+                  />
                 </div>
               </div>
 
@@ -996,11 +1018,24 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                   </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <AlertCircle className="w-3 h-3 text-red-500" />
-                Risco de Segurança?
-              </Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Clock className="w-3 h-3 text-amber-500" />
+                  Previsão de Resolução
+                </Label>
+                <Input 
+                  placeholder="Ex: 05/05/2026"
+                  value={editForm.resolutionDateEstimate}
+                  onChange={(e) => setEditForm({...editForm, resolutionDateEstimate: e.target.value})}
+                  className="rounded-xl h-11 border-slate-200 focus:ring-amber-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <AlertCircle className="w-3 h-3 text-red-500" />
+                  Risco de Segurança?
+                </Label>
                 <Select 
                   value={editForm.isSafetyRisk ? 'sim' : 'nao'} 
                   onValueChange={(val: any) => setEditForm({...editForm, isSafetyRisk: val === 'sim'})}
@@ -1013,6 +1048,7 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                     <SelectItem value="sim">Sim, envolve risco</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -1152,16 +1188,33 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                       </div>
                     </div>
 
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <Clock className="w-3 h-3 text-amber-500" />
+                        Previsão de Resolução
+                      </Label>
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+                        <p className="text-sm text-slate-900 font-bold">
+                          {selectedTicket.resolutionDateEstimate || 'Não informada'}
+                        </p>
+                      </div>
+                    </div>
+
                     {selectedTicket.resolution && (
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
                           <CheckCircle2 className="w-3 h-3" />
-                          Resolução Registrada
+                          Ação Registrada
                         </Label>
                         <div className="p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100 shadow-inner">
                           <p className="text-sm text-emerald-700 leading-relaxed font-bold italic">
                             "{selectedTicket.resolution}"
                           </p>
+                          {selectedTicket.resolutionByName && (
+                            <p className="text-[10px] text-emerald-600/70 font-bold uppercase mt-3 text-right">
+                              Por: {selectedTicket.resolutionByName}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}

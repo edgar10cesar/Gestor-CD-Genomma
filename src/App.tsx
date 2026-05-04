@@ -98,6 +98,7 @@ export default function App() {
   const [currentInvite, setCurrentInvite] = useState<any>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [showInventoryAlert, setShowInventoryAlert] = useState(false);
+  const [isAlertDismissed, setIsAlertDismissed] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
   const [authPass, setAuthPass] = useState('');
   const [authPassConfirm, setAuthPassConfirm] = useState('');
@@ -125,7 +126,7 @@ export default function App() {
       const now = new Date();
       // Monday is 1, check if it's Monday between 10:00 and 11:59
       const isMonday10h = now.getDay() === 1 && now.getHours() === 10;
-      setShowInventoryAlert(isMonday10h);
+      setShowInventoryAlert(isMonday10h && !isAlertDismissed);
     };
 
     if (!dataLoading && user) {
@@ -673,6 +674,8 @@ export default function App() {
           timestamp: serverTimestamp()
         });
       });
+      setIsAlertDismissed(true);
+      setShowInventoryAlert(false);
       toast.success("Contagem atualizada!");
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'manual_count');
@@ -1479,11 +1482,12 @@ export default function App() {
                   <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-slate-100 px-6">
-                      <TableHead className="w-[40%] pl-8 font-bold text-[10px] uppercase tracking-widest text-slate-400">Material de Apoio</TableHead>
-                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">Nível</TableHead>
-                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">Estoque atual / Estoque mínimo</TableHead>
-                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">UM</TableHead>
-                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400">Status</TableHead>
+                      <TableHead className="w-[30%] pl-8 font-bold text-[10px] uppercase tracking-widest text-slate-400">Material de Apoio</TableHead>
+                      <TableHead className="w-24 font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">Nível</TableHead>
+                      <TableHead className="w-32 font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">Estoque / Mínimo</TableHead>
+                      <TableHead className="w-32 font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">Última Contagem</TableHead>
+                      <TableHead className="w-16 font-bold text-[10px] uppercase tracking-widest text-slate-400 text-center">UM</TableHead>
+                      <TableHead className="w-24 font-bold text-[10px] uppercase tracking-widest text-slate-400">Status</TableHead>
                       <TableHead className="pr-8 font-bold text-[10px] uppercase tracking-widest text-slate-400 text-right">Controle</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1496,11 +1500,11 @@ export default function App() {
                       return (
                         <TableRow key={material.id} className="group border-slate-50 transition-all hover:bg-slate-50/50">
                           <TableCell className="pl-8 py-5">
-                            <p className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">{material.name}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-tight">{material.category}</p>
+                            <p className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors uppercase text-sm tracking-tight">{material.name}</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-0.5 tracking-widest">{material.category}</p>
                           </TableCell>
-                          <TableCell className="text-center w-32">
-                            <div className="flex flex-col items-center gap-1.5 px-4">
+                          <TableCell className="text-center">
+                            <div className="flex flex-col items-center gap-1.5 mx-auto w-20">
                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                                 <div 
                                   className={`h-full rounded-full transition-all duration-700 ${isLow ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'}`}
@@ -1510,22 +1514,47 @@ export default function App() {
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <span className={`font-mono text-base font-bold ${isLow ? 'text-red-600' : 'text-slate-900'}`}>
-                              {material.currentStock.toString().padStart(2, '0')}
-                            </span>
-                            <span className="text-slate-300 mx-1 font-mono">/</span>
-                            <span className="text-slate-400 font-mono text-xs">{material.minStock}</span>
+                            <div className="flex items-center justify-center gap-1">
+                              <span className={`font-mono text-sm font-bold ${isLow ? 'text-red-600' : 'text-slate-900'}`}>
+                                {material.currentStock}
+                              </span>
+                              <span className="text-slate-300 font-mono text-[10px]">/</span>
+                              <span className="text-slate-400 font-mono text-[10px]">{material.minStock}</span>
+                            </div>
                           </TableCell>
-                          <TableCell className="text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest">
+                          <TableCell className="text-center px-2">
+                            <div className="flex flex-col items-center leading-tight">
+                              <span className="text-[10px] font-bold text-slate-600 whitespace-nowrap tracking-tighter">
+                                {material.lastInventoryAt?.seconds 
+                                  ? new Date(material.lastInventoryAt.seconds * 1000).toLocaleDateString('pt-BR', { 
+                                      timeZone: 'America/Sao_Paulo',
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric'
+                                    }) 
+                                  : '---'}
+                              </span>
+                              {material.lastInventoryAt?.seconds && (
+                                <span className="text-[9px] font-medium text-slate-400">
+                                  {new Date(material.lastInventoryAt.seconds * 1000).toLocaleTimeString('pt-BR', { 
+                                    timeZone: 'America/Sao_Paulo',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center font-bold text-[9px] text-slate-400 uppercase tracking-widest">
                             {material.unit}
                           </TableCell>
                           <TableCell>
                             {isLow ? (
-                              <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase border border-red-200">Ruptura</span>
+                              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[9px] font-bold uppercase border border-red-200">Ruptura</span>
                             ) : isWarning ? (
-                              <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase border border-amber-200">Repor</span>
+                              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold uppercase border border-amber-200">Repor</span>
                             ) : (
-                              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase border border-emerald-200">Ok</span>
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200">Ok</span>
                             )}
                           </TableCell>
                           <TableCell className="pr-8 text-right">
