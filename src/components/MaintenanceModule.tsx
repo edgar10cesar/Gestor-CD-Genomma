@@ -447,12 +447,10 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
         </div>
 
         <Dialog open={isAdding} onOpenChange={setIsAdding}>
-          <DialogTrigger asChild>
-            <Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-600/20 font-bold text-[10px] md:text-xs uppercase tracking-wider px-4 md:px-6 h-9 md:h-11">
-              <Plus className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Nova Solicitação</span>
-              <span className="md:hidden">Novo</span>
-            </Button>
+          <DialogTrigger render={<Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-600/20 font-bold text-[10px] md:text-xs uppercase tracking-wider px-4 md:px-6 h-9 md:h-11" />}>
+            <Plus className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Nova Solicitação</span>
+            <span className="md:hidden">Novo</span>
           </DialogTrigger>
           <DialogContent className="rounded-[2rem] sm:rounded-[2rem] border-none shadow-2xl p-6 sm:p-8 max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader className="mb-4 sm:mb-6">
@@ -572,8 +570,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
               </div>
             </div>
             <DialogFooter className="mt-8 flex gap-3">
-              <DialogClose asChild>
-                <Button variant="ghost" className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-12 flex-1">Cancelar</Button>
+              <DialogClose render={<Button variant="ghost" className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-12 flex-1" />}>
+                Cancelar
               </DialogClose>
               <Button 
                 onClick={handleAddTicket}
@@ -951,14 +949,14 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
                   </Button>
 
                   <Dialog open={deleteConfirmId === ticket.id} onOpenChange={(open) => setDeleteConfirmId(open ? ticket.id : null)}>
-                    <DialogTrigger asChild>
+                    <DialogTrigger render={
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      />
+                    }>
+                      <Trash2 className="w-4 h-4" />
                     </DialogTrigger>
                     <DialogContent className="rounded-[2.5rem] max-w-sm p-8 border-none shadow-2xl">
                       <DialogHeader className="mb-6">
@@ -1116,8 +1114,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <DialogFooter className="mt-8 flex gap-3">
-            <DialogClose asChild>
-              <Button variant="ghost" className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-12 flex-1">Cancelar</Button>
+            <DialogClose render={<Button variant="ghost" className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-12 flex-1" />}>
+              Cancelar
             </DialogClose>
             <Button 
               onClick={handleEditTicket}
