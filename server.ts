@@ -90,26 +90,45 @@ async function startServer() {
 
       let emailsSentCount = 0;
 
-      // - Send to Purchasing Manager if low stock
-      if (lowStockMaterials.length > 0 && settings?.purchasingManagerEmail) {
-        const matListText = lowStockMaterials.map((m: any) => `- ${m.name}: ${m.currentStock} ${m.unit} (Mínimo: ${m.minStock})`).join("\n");
-        await sendEmail({
-          to: settings.purchasingManagerEmail,
-          subject: "⚠️ LISTA DE COMPRAS: Materiais com estoque baixo",
-          text: `Olá,\n\nIdentificamos que os seguintes itens estão com estoque baixo:\n\n${matListText}\n\nPor favor, providenciar a compra conforme a necessidade.\n\nAcesse o sistema: ${process.env.VITE_APP_URL || 'https://genomma-logistica.run.app'}`
-        });
-        emailsSentCount++;
+      // - Send to Purchasing Managers if low stock
+      if (lowStockMaterials.length > 0) {
+        const managers = allUsers.filter((u: any) => u.isPurchasingManager && u.email).map((u: any) => u.email);
+        
+        // Add legacy email if not in list
+        if (settings?.purchasingManagerEmail && !managers.includes(settings.purchasingManagerEmail)) {
+          managers.push(settings.purchasingManagerEmail);
+        }
+
+        if (managers.length > 0) {
+          const matListText = lowStockMaterials.map((m: any) => `- ${m.name}: ${m.currentStock} ${m.unit} (Mínimo: ${m.minStock})`).join("\n");
+          for (const managerEmail of managers) {
+            try {
+              await sendEmail({
+                to: managerEmail,
+                subject: "⚠️ LISTA DE COMPRAS: Materiais com estoque baixo",
+                text: `Olá,\n\nIdentificamos que os seguintes itens estão com estoque baixo:\n\n${matListText}\n\nPor favor, providenciar a compra conforme a necessidade.\n\nAcesse o sistema: ${process.env.VITE_APP_URL || 'https://genomma-logistica.run.app'}`
+              });
+              emailsSentCount++;
+            } catch (err) {
+              console.error(`[CRON] Erro ao enviar para gestor ${managerEmail}:`, err);
+            }
+          }
+        }
       }
 
       // - Send to Inventory Responsibles
       const responsibles = allUsers.filter((u: any) => u.isInventoryResponsible && u.email);
       for (const resp of responsibles) {
-        await sendEmail({
-          to: resp.email as string,
-          subject: "🕒 LEMBRETE: Inventário Semanal de Insumos - Segunda 10h",
-          text: `Olá ${resp.displayName || ''},\n\nEste é um aviso automático para informar que está na hora de iniciar o Inventário Semanal de Insumos no CD de Extrema/MG.\n\nPor favor, realize a conferência dos estoques e atualize o sistema.\n\nAcesse o sistema: ${process.env.VITE_APP_URL || 'https://genomma-logistica.run.app'}`
-        });
-        emailsSentCount++;
+        try {
+          await sendEmail({
+            to: resp.email as string,
+            subject: "🕒 LEMBRETE: Inventário Semanal de Insumos - Segunda 10h",
+            text: `Olá ${resp.displayName || ''},\n\nEste é um aviso automático para informar que está na hora de iniciar o Inventário Semanal de Insumos no CD de Extrema/MG.\n\nPor favor, realize a conferência dos estoques e atualize o sistema.\n\nAcesse o sistema: ${process.env.VITE_APP_URL || 'https://genomma-logistica.run.app'}`
+          });
+          emailsSentCount++;
+        } catch (err) {
+          console.error(`[CRON] Erro ao enviar lembrete para ${resp.email}:`, err);
+        }
       }
 
       // 3. Mark as sent

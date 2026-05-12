@@ -45,9 +45,30 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["location", "description", "status", "reportedBy", "createdAt"]
+    },
+    "IndicatorConfig": {
+      "title": "Indicator Configuration",
+      "description": "Preferences for the active dashboard view",
+      "type": "object",
+      "properties": {
+        "xAxis": { "type": "string" },
+        "yAxis": { "type": "string" },
+        "dateColumn": { "type": "string" },
+        "chartType": { "type": "string" },
+        "fileName": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "firestore": {
+    "/indicators_config/active": {
+      "schema": "IndicatorConfig",
+      "description": "Active configuration for the global indicators"
+    },
+    "/indicators_data/{rowId}": {
+      "schema": "object",
+      "description": "Persistent rows from the uploaded spreadsheet"
+    },
     "/maintenance_tickets/{ticketId}": {
       "schema": "MaintenanceTicket",
       "description": "Collection of maintenance requests"

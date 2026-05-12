@@ -53,6 +53,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MaintenanceModule from './components/MaintenanceModule';
+import IndicatorsModule from './components/IndicatorsModule';
 
 const ADMIN_EMAILS = ['cesar.802012@gmail.com', 'gencdgen@gmail.com'];
 const SHARED_APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
@@ -70,7 +71,7 @@ export default function App() {
     lastAutoInventoryEmailSent?: string 
   }>({});
   const [search, setSearch] = useState('');
-  const [activeModule, setActiveModule] = useState<'home' | 'inventory' | 'maintenance'>('home');
+  const [activeModule, setActiveModule] = useState<'home' | 'inventory' | 'maintenance' | 'indicators'>('home');
   const [categoryFilter, setCategoryFilter] = useState('todas');
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const lastAlertedRef = React.useRef<Record<string, number>>({});
@@ -497,11 +498,10 @@ export default function App() {
         : `URGENTE: Lista de Compras - Genomma Logística - ${new Date().toLocaleDateString()}`;
 
     try {
-      // Loop through all managers to send individual emails
-      // In a real production system we might send a single email with CC, 
-      // but for reliability in the preview environment, individual calls are safer.
-      const sendPromises = managers.map(destination => 
-        fetch('/api/send-email', {
+      console.log(`[Email] Envio solicitado para ${managers.length} destinatários:`, managers);
+      
+      const sendPromises = managers.map(async destination => {
+        const response = await fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -510,25 +510,37 @@ export default function App() {
             html: htmlBody,
             text: `Olá, segue o relatório de inventário: ${isTest ? "ITEM TESTE" : lowStockMaterials.map(m => m.name).join(", ")}`
           })
-        })
-      );
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error(`[Email] Falha ao enviar para ${destination}:`, errorData);
+          throw new Error(errorData.error || `Erro HTTP ${response.status}`);
+        }
+        
+        return response.json();
+      });
 
-      const results = await Promise.all(sendPromises);
-      const allOk = results.every(res => res.ok);
+      const results = await Promise.allSettled(sendPromises);
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected');
 
-      if (allOk) {
+      if (failed.length === 0) {
         if (isAutomatic) {
           toast.success("Relatório de inventário enviado aos responsáveis.");
         } else {
-          toast.success(isTest ? "E-mail de teste enviado!" : `Solicitação enviada para ${managers.length} responsáveis.`);
+          toast.success(isTest ? "E-mail de teste enviado com sucesso!" : `Solicitação enviada para ${managers.length} responsáveis.`);
         }
       } else {
-        toast.warning("Houve erro ao enviar para alguns destinatários. Verifique o log.");
+        console.error("[Email] Alguns e-mails falharam:", failed);
+        toast.warning(`${successful} e-mail(s) enviados, ${failed.length} falharam.`, {
+          description: "Verifique se a 'Senha de App' do Gmail está configurada corretamente nos segredos."
+        });
       }
     } catch (e: any) {
       console.error("Email error:", e);
       if (!isAutomatic) {
-        toast.error(`Falha no envio automático.`);
+        toast.error(`Falha no envio: ${e.message || "Erro desconhecido"}`);
       }
     } finally {
       setSendingEmail(false);
@@ -949,8 +961,22 @@ export default function App() {
 
   console.log("Main dashboard rendering...");
 
+  if (activeModule === 'indicators') {
+    return (
+      <>
+        <Toaster position="top-right" richColors closeButton />
+        <IndicatorsModule onBack={() => setActiveModule('home')} />
+      </>
+    );
+  }
+
   if (activeModule === 'maintenance') {
-    return <MaintenanceModule onBack={() => setActiveModule('home')} />;
+    return (
+      <>
+        <Toaster position="top-right" richColors closeButton />
+        <MaintenanceModule onBack={() => setActiveModule('home')} />
+      </>
+    );
   }
 
   return (
@@ -1121,6 +1147,14 @@ export default function App() {
                   </div>
                 </div>
                 <div className="p-8 pt-0 flex gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleGeneratePurchaseList(true)} 
+                    disabled={sendingEmail}
+                    className="flex-1 rounded-2xl h-12 border-emerald-200 text-emerald-600 font-bold hover:bg-emerald-50"
+                  >
+                    {sendingEmail ? "Enviando..." : "Testar E-mail"}
+                  </Button>
                   <Button variant="outline" onClick={() => setIsSettingsOpen(false)} className="flex-1 rounded-2xl h-12 border-slate-200 font-bold text-slate-500">
                     Cancelar
                   </Button>
@@ -1230,16 +1264,29 @@ export default function App() {
                 </button>
               )}
 
-              {/* Card Próximo */}
-              <div className="relative flex flex-col opacity-50 grayscale">
-                <div className="h-full bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-300 p-8 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 bg-slate-200 rounded-3xl flex items-center justify-center mb-6">
-                    <Clock className="w-8 h-8 text-slate-400" />
+              {/* Card Indicadores */}
+              <button 
+                onClick={() => setActiveModule('indicators')}
+                className="group relative flex flex-col text-left transition-all hover:-translate-y-2 active:scale-95 outline-none"
+              >
+                <div className="h-full bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm hover:shadow-2xl hover:shadow-emerald-900/10 transition-all overflow-hidden relative">
+                  <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <BarChart3 className="w-24 h-24" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-400">Em breve</h3>
-                  <p className="text-slate-400 text-xs mt-2 uppercase tracking-widest leading-none font-bold">Novos Módulos</p>
+                  <div className="w-16 h-16 bg-emerald-100 rounded-3xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-100/50 group-hover:shadow-emerald-600/30">
+                    <BarChart3 className="w-8 h-8 text-emerald-600 group-hover:text-white transition-colors" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-2xl font-black text-slate-900">Indicadores & KPIs</h3>
+                  </div>
+                  <p className="text-slate-500 text-sm leading-relaxed mb-8">
+                    Importe planilhas Excel para gerar gráficos dinâmicos e análises de desempenho do CD.
+                  </p>
+                  <div className="mt-auto flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest text-emerald-600">
+                    Gerar Indicadores <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                  </div>
                 </div>
-              </div>
+              </button>
           </div>
         </div>
       ) : (
@@ -1592,10 +1639,17 @@ export default function App() {
                                       <Input id={`bulkAmount-${material.id}`} type="number" defaultValue={material.currentStock} className="rounded-xl h-12" />
                                     </div>
                                     <div className="pt-4">
-                                      <DialogClose render={<Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-bold" onClick={() => {
-                                          const amount = Number((document.getElementById(`bulkAmount-${material.id}`) as HTMLInputElement).value);
-                                          setManualStock(material, amount);
-                                        }} />}>Atualizar</DialogClose>
+                                      <DialogClose asChild>
+                                        <Button 
+                                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-12 font-bold" 
+                                          onClick={() => {
+                                            const amount = Number((document.getElementById(`bulkAmount-${material.id}`) as HTMLInputElement).value);
+                                            setManualStock(material, amount);
+                                          }}
+                                        >
+                                          Atualizar
+                                        </Button>
+                                      </DialogClose>
                                     </div>
                                   </div>
                                 </DialogContent>
@@ -1615,16 +1669,14 @@ export default function App() {
 
                               {isAdmin && (
                                 <Dialog>
-                                  <DialogTrigger 
-                                    render={
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-8 w-8 p-0 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50"
-                                      />
-                                    }
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                  <DialogTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-8 w-8 p-0 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </Button>
                                   </DialogTrigger>
                                   <DialogContent className="rounded-3xl border-slate-200">
                                     <DialogHeader>
@@ -1640,8 +1692,10 @@ export default function App() {
                                       </p>
                                     </div>
                                     <DialogFooter className="gap-2">
-                                      <DialogClose render={<Button variant="ghost" className="rounded-xl flex-1 border-slate-200" />}>
-                                        Cancelar
+                                      <DialogClose asChild>
+                                        <Button variant="ghost" className="rounded-xl flex-1 border-slate-200">
+                                          Cancelar
+                                        </Button>
                                       </DialogClose>
                                       <Button 
                                         onClick={() => handleDeleteMaterial(material.id)} 

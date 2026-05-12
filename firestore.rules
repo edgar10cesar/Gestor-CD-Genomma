@@ -84,5 +84,15 @@ service cloud.firestore {
       allow update: if isSignedIn();
       allow delete: if isSignedIn() && (isAdmin() || (resource != null && resource.data.reportedBy == request.auth.uid));
     }
+
+    match /indicators_config/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    match /indicators_data/{dataId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
   }
 }
