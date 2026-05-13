@@ -53,7 +53,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MaintenanceModule from './components/MaintenanceModule';
-import IndicatorsModule from './components/IndicatorsModule';
 
 const ADMIN_EMAILS = ['cesar.802012@gmail.com', 'gencdgen@gmail.com'];
 const SHARED_APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
@@ -71,7 +70,7 @@ export default function App() {
     lastAutoInventoryEmailSent?: string 
   }>({});
   const [search, setSearch] = useState('');
-  const [activeModule, setActiveModule] = useState<'home' | 'inventory' | 'maintenance' | 'indicators'>('home');
+  const [activeModule, setActiveModule] = useState<'home' | 'inventory' | 'maintenance'>('home');
   const [categoryFilter, setCategoryFilter] = useState('todas');
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const lastAlertedRef = React.useRef<Record<string, number>>({});
@@ -961,15 +960,6 @@ export default function App() {
 
   console.log("Main dashboard rendering...");
 
-  if (activeModule === 'indicators') {
-    return (
-      <>
-        <Toaster position="top-right" richColors closeButton />
-        <IndicatorsModule onBack={() => setActiveModule('home')} />
-      </>
-    );
-  }
-
   if (activeModule === 'maintenance') {
     return (
       <>
@@ -1263,30 +1253,6 @@ export default function App() {
                   </div>
                 </button>
               )}
-
-              {/* Card Indicadores */}
-              <button 
-                onClick={() => setActiveModule('indicators')}
-                className="group relative flex flex-col text-left transition-all hover:-translate-y-2 active:scale-95 outline-none"
-              >
-                <div className="h-full bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm hover:shadow-2xl hover:shadow-emerald-900/10 transition-all overflow-hidden relative">
-                  <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <BarChart3 className="w-24 h-24" />
-                  </div>
-                  <div className="w-16 h-16 bg-emerald-100 rounded-3xl flex items-center justify-center mb-6 group-hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-100/50 group-hover:shadow-emerald-600/30">
-                    <BarChart3 className="w-8 h-8 text-emerald-600 group-hover:text-white transition-colors" />
-                  </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-2xl font-black text-slate-900">Indicadores & KPIs</h3>
-                  </div>
-                  <p className="text-slate-500 text-sm leading-relaxed mb-8">
-                    Importe planilhas Excel para gerar gráficos dinâmicos e análises de desempenho do CD.
-                  </p>
-                  <div className="mt-auto flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest text-emerald-600">
-                    Gerar Indicadores <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </button>
           </div>
         </div>
       ) : (
