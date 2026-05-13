@@ -24,8 +24,10 @@ import {
   ChevronLeft,
   X,
   ArrowLeft,
-  Pencil
+  Pencil,
+  FileSpreadsheet
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -427,6 +429,79 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
     }
   };
 
+  const exportToExcel = () => {
+    if (tickets.length === 0) {
+      toast.error("Não há dados para exportar.");
+      return;
+    }
+
+    try {
+      // Prepare data for export
+      const exportData = tickets.map(ticket => {
+        let createdAtStr = '';
+        if (ticket.createdAt) {
+          if (typeof ticket.createdAt.toDate === 'function') {
+            createdAtStr = ticket.createdAt.toDate().toLocaleString('pt-BR');
+          } else if (ticket.createdAt.seconds) {
+            createdAtStr = new Date(ticket.createdAt.seconds * 1000).toLocaleString('pt-BR');
+          } else if (ticket.createdAt instanceof Date) {
+            createdAtStr = ticket.createdAt.toLocaleString('pt-BR');
+          }
+        }
+
+        let resolvedAtStr = '';
+        if (ticket.resolvedAt) {
+          resolvedAtStr = new Date(ticket.resolvedAt + 'T12:00:00').toLocaleDateString('pt-BR');
+        }
+
+        return {
+          'Data Abertura': createdAtStr,
+          'Local': ticket.location,
+          'Descrição': ticket.description,
+          'Criticidade': priorityLabels[ticket.priority || ''] || 'Normal',
+          'Risco de Segurança': ticket.isSafetyRisk ? 'Sim' : 'Não',
+          'Relatado Por': ticket.reportedByName,
+          'Status': ticket.status === 'open' ? 'Pendente' : 
+                    ticket.status === 'in_progress' ? 'Em Andamento' : 'Finalizado',
+          'Previsão de Resolução': ticket.resolutionDateEstimate || '',
+          'Resolução / Ações': ticket.resolution || '',
+          'Finalizado em': resolvedAtStr,
+          'Finalizado por': ticket.resolutionByName || ''
+        };
+      });
+
+      // Create worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Auto-size columns (rough estimate)
+      const colWidths = [
+        { wch: 18 }, // Data Abertura
+        { wch: 20 }, // Local
+        { wch: 40 }, // Descrição
+        { wch: 12 }, // Criticidade
+        { wch: 18 }, // Risco de Segurança
+        { wch: 20 }, // Relatado Por
+        { wch: 15 }, // Status
+        { wch: 20 }, // Previsão
+        { wch: 40 }, // Resolução
+        { wch: 15 }, // Finalizado em
+        { wch: 20 }  // Finalizado por
+      ];
+      ws['!cols'] = colWidths;
+
+      // Create workbook and append worksheet
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Manutenções");
+
+      // Save to file
+      XLSX.writeFile(wb, `Relatorio_Manutencoes_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success("Relatório Excel gerado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao exportar Excel:", error);
+      toast.error("Falha ao gerar relatório Excel.");
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F9FAFB]">
       {/* Header */}
@@ -446,7 +521,17 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
           </div>
         </div>
 
-        <Dialog open={isAdding} onOpenChange={setIsAdding}>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={exportToExcel}
+            className="rounded-xl border-slate-200 text-slate-600 font-bold text-[10px] md:text-xs uppercase tracking-wider px-4 md:px-6 h-9 md:h-11 hover:bg-slate-50"
+          >
+            <FileSpreadsheet className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Exportar Excel</span>
+          </Button>
+
+          <Dialog open={isAdding} onOpenChange={setIsAdding}>
           <DialogTrigger render={<Button className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-lg shadow-amber-600/20 font-bold text-[10px] md:text-xs uppercase tracking-wider px-4 md:px-6 h-9 md:h-11" />}>
             <Plus className="w-4 h-4 md:mr-2" />
             <span className="hidden md:inline">Nova Solicitação</span>
@@ -588,7 +673,8 @@ export default function MaintenanceModule({ onBack }: { onBack: () => void }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </header>
+      </div>
+    </header>
 
       <main className="max-w-7xl mx-auto p-4 md:p-10 w-full space-y-6 animate-in fade-in duration-500">
         {/* Dashboard Summary moved to main content area for better mobile experience */}
